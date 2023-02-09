@@ -1,0 +1,49 @@
+@startuml
+
+skinparam {
+    BackgroundColor    #f2f2f0
+    BorderColor        #8f8e91
+    PackageBorderColor #8f8e91
+    ArrowColor         #8f8e91
+    PackageFontColor   #424242
+}
+
+skinparam component {
+    BackgroundColor #d2edfc
+}
+skinparam queue {
+    BackgroundColor #fcf4dc
+}
+skinparam cloud {
+    BackgroundColor #f0dcfc
+}
+skinparam database {
+    BackgroundColor #e4e9ed
+}
+
+interface "REST API" as REST
+
+[Server] as Server
+package "Workers" as Workers {
+  package {
+      [Worker N]-down-[Container N]
+  }
+  package {
+      [Worker 1]-down-[Container 1]
+  }
+}
+database "Database" as Database
+cloud "Object Storage" as ObjectStorage
+queue "Task Queue" as TaskQueue
+queue "Result Queue" as ResultQueue
+
+REST - [Server]
+Server -up- Database
+Server -down- ObjectStorage
+Server -right-> TaskQueue
+TaskQueue -right-> Workers
+Workers -left-> ResultQueue
+ResultQueue -left-> Server
+ObjectStorage -- Workers
+
+@enduml
