@@ -1,2 +1,2 @@
-# ces
+# CES
 Code Execution Service
