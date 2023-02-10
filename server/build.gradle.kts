@@ -8,7 +8,7 @@ plugins {
     kotlin("jvm") version "1.8.0"
 }
 
-group = "ces"
+group = "com.ces"
 version = cesVersion
 
 repositories {
