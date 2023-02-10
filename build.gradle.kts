@@ -4,7 +4,7 @@ plugins {
     application
 }
 
-group = "ces"
+group = "com.ces"
 version = cesVersion
 
 repositories {

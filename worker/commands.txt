@@ -1,0 +1,2 @@
+docker build -t worker-app .
+docker run -v //var/run/docker.sock:/var/run/docker.sock worker-app
