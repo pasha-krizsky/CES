@@ -1,0 +1,43 @@
+@startuml
+
+skinparam dpi 300
+
+skinparam {
+    BackgroundColor          #f2f2f0
+    BorderColor              #8f8e91
+    SequenceGroupBorderColor #8f8e91
+    GroupBorderColor         #8f8e91
+    PackageBorderColor       #8f8e91
+    ArrowColor               #8f8e91
+    PackageFontColor         #424242
+}
+
+skinparam queue {
+    BackgroundColor #fcf4dc
+}
+
+queue       TaskQueue     as TaskQueue
+participant Worker        as Worker
+participant Docker        as Docker
+participant ObjectStorage as ObjectStorage
+queue       EventQueue    as EventQueue
+
+TaskQueue -> Worker : Code execution task
+Worker -> ObjectStorage : Fetch source code
+Worker -> Docker : Build image
+Worker -> Docker : Run container
+Worker -> EventQueue : CodeExecutionStartedEvent
+loop logs size and execution time not exceeded
+    Worker <-- Docker : Stream logs
+    Worker -> ObjectStorage : Store logs
+end
+
+alt still running
+    Worker -> Docker : Kill container
+end
+
+Worker -> EventQueue : CodeExecutionFinishedEvent
+
+Worker -> Docker : Cleanup
+
+@enduml
