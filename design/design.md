@@ -10,10 +10,10 @@ Used to isolate actual code execution.
 Stores the source code and execution results.
 - **Database**. 
 Stores domain entities (CodeExecution, etc.).
-- **Task Queue** and **Result Queue**.
+- **Task Queue** and **Event Queue**.
 Used for communication between Server and Workers.
 
-<img alt="components diagram" height=50% src="uml/components.png" width=50%/>
+<img alt="components diagram" src="uml/components.png"/>
 
 ### Technologies
 - **Kotlin** (for writing *Server* and *Worker* component's code)
@@ -24,9 +24,12 @@ Used for communication between Server and Workers.
 - **Exposed** (for SQL)
 - **PostgreSQL** (*Database* component)
 - **Amazon S3** (*Object Storage* component)
-- **RabbitMQ** (*Task Queue* and *Result Queue* components)
+- **RabbitMQ** (*Task Queue* and *Event Queue* components)
 - **Docker** (for running code and packaging the service itself)
 - **Docker Compose** (for packaging all infrastructure together)
+
+### Worker lifecycle
+<img alt="worker lifecycle" src="uml/worker_lifecycle.png"/>
 
 ### Code execution
 It is suggested to use [Docker Engine API](https://docs.docker.com/engine/api/v1.42) to build images with source code

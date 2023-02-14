@@ -1,5 +1,7 @@
 @startuml
 
+skinparam dpi 300
+
 skinparam {
     BackgroundColor    #f2f2f0
     BorderColor        #8f8e91
@@ -35,15 +37,15 @@ package "Workers" as Workers {
 database "Database" as Database
 cloud "Object Storage" as ObjectStorage
 queue "Task Queue" as TaskQueue
-queue "Result Queue" as ResultQueue
+queue "Event Queue" as EventQueue
 
 REST - [Server]
 Server -up- Database
 Server -down- ObjectStorage
 Server -right-> TaskQueue
 TaskQueue -right-> Workers
-Workers -left-> ResultQueue
-ResultQueue -left-> Server
+Workers -left-> EventQueue
+EventQueue -left-> Server
 ObjectStorage -- Workers
 
 @enduml
