@@ -2,8 +2,10 @@ package com.ces.worker.docker
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
+import java.math.BigInteger
 import java.nio.file.Path
 import java.time.Instant
+import java.time.Instant.EPOCH
 import kotlin.io.path.pathString
 import kotlin.io.path.readBytes
 import kotlin.text.Charsets.UTF_8
@@ -54,20 +56,31 @@ class NettyDockerImpl(private val client: NettySocketClient) : Docker {
 
     override suspend fun copyFile(
         containerId: ContainerId,
-        source: Path,
+        sourceTar: Path,
         destination: Path,
     ): CopyFileResponse {
         val response = client.httpPut(
             v41("containers/$containerId/archive?path=${destination.pathString}"),
             headers = mapOf("content-type" to "application/x-tar"),
-            body = source.readBytes()
+            body = sourceTar.readBytes()
         )
         return CopyFileResponse(response.status)
     }
 
     override suspend fun containerLogs(containerId: ContainerId, since: Instant): ContainerLogsResponse {
-        val response = client.httpGet(v41("containers/$containerId/logs?stdout=1&stderr=1"))
-        return ContainerLogsResponse(response.status, response.body.asString())
+        val nano = since.epochSecond.toString() + "." + since.nano
+        val response = client.httpGet(
+            v41(
+                "containers/$containerId/logs?tail=all&stdout=1&stderr=1&timestamps=true&since=$nano"
+            )
+        )
+        val (stdout, stderr, lastTimestamp) = parseLogs(response.body)
+        return ContainerLogsResponse(
+            response.status,
+            stdout.filter { it.timestamp > since },
+            stderr.filter { it.timestamp > since },
+            lastTimestamp
+        )
     }
 
     override suspend fun inspectContainer(containerId: ContainerId): InspectContainerResponse {
@@ -99,27 +112,56 @@ class NettyDockerImpl(private val client: NettySocketClient) : Docker {
             ?.jsonObject?.get("Status")
             ?.toString()
             ?.trim('"')
-            ?.let { ContainerStatus.valueOf(it) }
+            ?.let { ContainerStatus.valueOf(it.toUpperCase()) }
             ?: ContainerStatus.NOT_FOUND
-}
 
-// TODO Parse logs
-//val inputStream = response.body
-//val stdin = StringBuilder()
-//val stderr = StringBuilder()
-//while (true) {
-//    val header = inputStream.readNBytes(8)
-//    if (header.isEmpty())
-//        break
-////                println("header: ${IOUtils.toString(header, "UTF-8")}")
-//    val streamType = header[0]
-////                println("streamType: $streamType")
-//    val bytesToSkip = header.copyOfRange(1, 4)
-////                println("bytesToSkip: $bytesToSkip")
-//    val blockSize = BigInteger(header.copyOfRange(4, 8)).toInt()
-////                println("blockSize: $blockSize")
-//    val block = inputStream.readNBytes(blockSize)
-////                println("block: $block")
-////                println("convertedBlock: ${IOUtils.toString(block.inputStream(), CHARSET)}")
-//    stdin.append(IOUtils.toString(block.inputStream(), CHARSET))
-//}
+    data class ParsedLogs(val stdout: List<LogChunk>, val stderr: List<LogChunk>, val lastTimestamp: Instant)
+
+    private fun parseLogs(body: ResponseBody): ParsedLogs {
+        val inputStream = body.inputStream()
+        val stdout = mutableListOf<LogChunk>()
+        val stderr = mutableListOf<LogChunk>()
+        var lastTimestamp = EPOCH
+        while (true) {
+            val header = inputStream.readNBytes(LOG_HEADER_LENGTH)
+            if (header.isEmpty())
+                break
+            val streamType = header[STREAM_TYPE]
+            val blockSize = BigInteger(header.copyOfRange(BLOCK_SIZE_START, BLOCK_SIZE_END)).toInt()
+
+            var timestampBuffer = ByteArray(0)
+            var byte: ByteArray
+            var timestampLength = 0
+            while (true) {
+                byte = inputStream.readNBytes(1)
+                if (byte[0] != 32.toByte())
+                    timestampBuffer += byte
+                else break
+                timestampLength++
+            }
+
+            val timestamp = Instant.parse(String(timestampBuffer))
+            if (timestamp > lastTimestamp)
+                lastTimestamp = timestamp
+            val block = inputStream.readNBytes(blockSize - timestampLength - 1)
+            val logChunk = LogChunk(timestamp, String(block))
+            when (streamType) {
+                STDOUT -> stdout.add(logChunk)
+                STDERR -> stderr.add(logChunk)
+                else -> throw IllegalStateException("Failed to recognise stream type $streamType")
+            }
+        }
+        return ParsedLogs(stdout, stderr, lastTimestamp)
+    }
+
+    companion object {
+        private const val STREAM_TYPE = 0
+        private const val BLOCK_SIZE_START = 4
+        private const val BLOCK_SIZE_END = 8
+
+        private const val STDOUT: Byte = 1
+        private const val STDERR: Byte = 2
+
+        private const val LOG_HEADER_LENGTH = 8
+    }
+}

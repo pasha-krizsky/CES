@@ -1,19 +1,23 @@
 package com.ces.worker
 
+import com.ces.worker.docker.ContainerLogsResponse
 import com.ces.worker.docker.NettyDockerImpl
 import com.ces.worker.docker.NettySocketClient
 import com.ces.worker.tar.compress
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 import java.nio.file.Path
-import java.time.Instant
+import java.time.Instant.EPOCH
 import java.util.UUID.randomUUID
 import kotlin.io.path.deleteIfExists
 
+const val CODE_EXECUTION_TIMEOUT = 5_000L
+
 const val DOCKER_SOCKET = "/var/run/docker.sock"
 
-const val RUNNER_IMAGE_NAME = "mono-runner"
+const val RUNNER_IMAGE_NAME = "runner-mono"
 const val RUNNER_HOME_PATH = "/home/newuser"
 
 const val WORKER_DIR = "/tmp"
@@ -27,7 +31,23 @@ namespace HelloWorld
         static void Main(string[] args)
         {
             for (int i = 0; i < 10; i++) {
-                System.Console.WriteLine("Hello World...");
+                System.Console.WriteLine("Hello World " + i);
+                System.Console.Error.WriteLine("Hello Error " + i);
+                System.Threading.Thread.Sleep(1000);
+            }
+        }
+    }
+}
+""".trimIndent()
+val SCRIPT_SOURCE_CODE_2 = """
+namespace HelloWorld
+{
+    class Hello {
+        static void Main(string[] args)
+        {
+            for (int i = 0; i < 10; i++) {
+                System.Console.WriteLine("Hello World " + i);
+                System.Console.Error.WriteLine("Hello Error " + i);
             }
         }
     }
@@ -40,6 +60,7 @@ fun main(): Unit = runBlocking {
 
 suspend fun executeCode(sourceCode: String) {
 
+    println("Start execution...")
     val client = NettySocketClient(DOCKER_SOCKET)
     val docker = NettyDockerImpl(client)
 
@@ -75,16 +96,31 @@ suspend fun executeCode(sourceCode: String) {
     val startContainerResponse = docker.startContainer(containerId)
     println(startContainerResponse)
 
-    delay(3000)
+    val result = withTimeoutOrNull(CODE_EXECUTION_TIMEOUT) {
+        var logsTimestamp = EPOCH
+        do {
+            val inspectContainerResponse = docker.inspectContainer(containerId)
+            val containerStatus = inspectContainerResponse.containerStatus
+            val logs = docker.containerLogs(containerId, logsTimestamp)
 
-    val containerLogs = docker.containerLogs(containerId, Instant.EPOCH)
-    println(containerLogs)
-
-    val killContainerResponse = docker.killContainer(containerId)
-    println(killContainerResponse)
+            sendLogs(logs)
+            logsTimestamp = logs.lastTimestamp
+            delay(50)
+        } while (containerStatus.isNotFinal())
+    }
+    if (result == null) {
+        val killContainerResponse = docker.killContainer(containerId)
+        println(killContainerResponse)
+    }
 
     val removeContainerResponse = docker.removeContainer(containerId)
     println(removeContainerResponse)
 
     client.close()
+}
+
+fun sendLogs(logs: ContainerLogsResponse) {
+    if (logs.stdout.isEmpty() && logs.stderr.isEmpty())
+        return
+    println(logs.mergeToString())
 }
