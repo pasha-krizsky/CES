@@ -90,7 +90,7 @@ class NettySocketClient(socketPath: String) {
 
     suspend fun httpGet(path: String): Response {
         val request: FullHttpRequest = DefaultFullHttpRequest(HTTP_1_1, GET, path, EMPTY_BUFFER)
-        request.headers()[HOST] = ""
+        request.headers()[HOST] = EMPTY
         requestChannel.writeAndFlush(request)
         return responseChannel.receive()
     }
@@ -98,13 +98,13 @@ class NettySocketClient(socketPath: String) {
     suspend fun httpPost(
         path: String,
         headers: Map<String, String> = mapOf(CONTENT_TYPE to APPLICATION_JSON),
-        body: String = "",
+        body: String = EMPTY,
     ): Response {
 
         val request: FullHttpRequest = DefaultFullHttpRequest(
             HTTP_1_1, POST, path, wrappedBuffer(body.toByteArray())
         )
-        request.headers()[HOST] = ""
+        request.headers()[HOST] = EMPTY
         headers.forEach {
             request.headers()[it.key] = it.value
         }
@@ -120,7 +120,7 @@ class NettySocketClient(socketPath: String) {
     ): Response {
 
         val request: FullHttpRequest = DefaultFullHttpRequest(HTTP_1_1, PUT, path, wrappedBuffer(body))
-        request.headers()[HOST] = ""
+        request.headers()[HOST] = EMPTY
         headers.forEach {
             request.headers()[it.key] = it.value
         }
@@ -131,12 +131,13 @@ class NettySocketClient(socketPath: String) {
 
     suspend fun httpDelete(path: String): Response {
         val request: FullHttpRequest = DefaultFullHttpRequest(HTTP_1_1, DELETE, path, EMPTY_BUFFER)
-        request.headers()[HOST] = ""
+        request.headers()[HOST] = EMPTY
         requestChannel.writeAndFlush(request)
         return responseChannel.receive()
     }
 
     companion object {
+        const val EMPTY = ""
         const val HOST = "host"
         const val CONTENT_TYPE = "content-type"
         const val APPLICATION_JSON = "application/json"
