@@ -1,4 +1,4 @@
-package com.ces.worker.docker
+package com.ces.worker.infra.docker
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject

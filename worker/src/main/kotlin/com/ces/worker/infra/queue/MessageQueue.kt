@@ -1,4 +1,4 @@
-package com.ces.worker.queue
+package com.ces.worker.infra.queue
 
 data class Message(val content: String)
 

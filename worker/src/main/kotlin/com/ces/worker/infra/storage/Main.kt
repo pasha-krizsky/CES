@@ -1,4 +1,4 @@
-package com.ces.worker.storage
+package com.ces.worker.infra.storage
 
 import kotlinx.coroutines.runBlocking
 

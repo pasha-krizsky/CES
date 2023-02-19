@@ -1,4 +1,4 @@
-package com.ces.worker.storage
+package com.ces.worker.infra.storage
 
 import io.minio.*
 import kotlinx.coroutines.future.await

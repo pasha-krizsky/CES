@@ -1,9 +1,9 @@
 package com.ces.worker
 
-import com.ces.worker.docker.ContainerLogsResponse
-import com.ces.worker.docker.NettyDockerImpl
-import com.ces.worker.docker.NettySocketClient
-import com.ces.worker.tar.compress
+import com.ces.worker.infra.docker.ContainerLogsResponse
+import com.ces.worker.infra.docker.NettyDockerImpl
+import com.ces.worker.infra.docker.NettySocketClient
+import com.ces.worker.infra.tar.compress
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
@@ -13,32 +13,7 @@ import java.time.Instant.EPOCH
 import java.util.UUID.randomUUID
 import kotlin.io.path.deleteIfExists
 
-const val CODE_EXECUTION_TIMEOUT = 5_000L
 
-const val DOCKER_SOCKET = "/var/run/docker.sock"
-
-const val RUNNER_IMAGE_NAME = "runner-mono"
-const val RUNNER_HOME_PATH = "/home/newuser"
-
-const val WORKER_DIR = "/tmp"
-const val WORKER_SCRIPT_TAR_PATH = "$WORKER_DIR/out.tar"
-
-const val SCRIPT_EXTENSION = ".cs"
-val SCRIPT_SOURCE_CODE = """
-namespace HelloWorld
-{
-    class Hello {
-        static void Main(string[] args)
-        {
-            for (int i = 0; i < 10; i++) {
-                System.Console.WriteLine("Hello World " + i);
-                System.Console.Error.WriteLine("Hello Error " + i);
-                System.Threading.Thread.Sleep(1000);
-            }
-        }
-    }
-}
-""".trimIndent()
 val SCRIPT_SOURCE_CODE_2 = """
 namespace HelloWorld
 {
@@ -48,6 +23,7 @@ namespace HelloWorld
             for (int i = 0; i < 10; i++) {
                 System.Console.WriteLine("Hello World " + i);
                 System.Console.Error.WriteLine("Hello Error " + i);
+                System.Threading.Thread.Sleep(1000);
             }
         }
     }
