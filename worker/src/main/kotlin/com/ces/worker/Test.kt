@@ -87,7 +87,7 @@ class Test {
 
         // 4. Receiving CodeExecutionRequestedEvent from RabbitMQ
         println("Receiving CodeExecutionRequestedEvent from RabbitMQ")
-        val message = queue.getMessage()
+        val message = queue.receiveMessage()
         val deserialized = Json.decodeFromString<CodeExecutionRequestedEvent>(message.content)
         println("Got message: $deserialized")
 

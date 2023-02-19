@@ -12,7 +12,7 @@ import com.rabbitmq.client.Channel as RabbitChannel
 import kotlinx.coroutines.channels.Channel as CoroutineChannel
 
 class RabbitMessageQueue(
-    queueName: String,
+    private val queueName: String,
     connectionName: String,
 ) : MessageQueue {
 
@@ -31,32 +31,23 @@ class RabbitMessageQueue(
         deliveryHandler = DeliverCallback { _, delivery ->
             runBlocking {
                 val message = Message(String(delivery.body, UTF_8))
-                println("Received message: '$message'")
                 deliveryChannel.send(message)
                 rabbitChannel.basicAck(delivery.envelope.deliveryTag, false)
             }
         }
-        cancelHandler = CancelCallback { tag ->
-            println("Cancel message: '$tag'")
-        }
+        cancelHandler = CancelCallback { _ -> }
 
         rabbitChannel.basicQos(RABBIT_PREFETCH_COUNT)
         rabbitChannel.queueDeclare(queueName, false, false, false, null)
-        rabbitChannel.basicConsume(QUEUE_NAME, AUTO_ACC, CONSUMER_TAG, deliveryHandler, cancelHandler)
+        rabbitChannel.basicConsume(queueName, AUTO_ACC, CONSUMER_TAG, deliveryHandler, cancelHandler)
     }
 
-    override suspend fun getMessage(): Message {
+    override suspend fun receiveMessage(): Message {
         return deliveryChannel.receive()
     }
 
     override suspend fun sendMessage(message: Message) = withContext(Dispatchers.IO) {
-        rabbitChannel.basicPublish(
-            "",
-            QUEUE_NAME,
-            null,
-            message.content.toByteArray(UTF_8)
-        )
-        println("Sent '$message'")
+        rabbitChannel.basicPublish(EXCHANGE_NAME, queueName, null, message.content.toByteArray(UTF_8))
     }
 
     override fun close() {
@@ -65,6 +56,7 @@ class RabbitMessageQueue(
     }
 
     companion object {
+        const val EXCHANGE_NAME = ""
         const val CONSUMER_TAG = "worker"
         const val RABBIT_PREFETCH_COUNT = 1
         const val AUTO_ACC = false
