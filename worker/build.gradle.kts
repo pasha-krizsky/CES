@@ -22,6 +22,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
     implementation("org.apache.commons:commons-compress:1.22")
     implementation("io.netty:netty-all:4.1.87.Final")
+    implementation("com.rabbitmq:amqp-client:5.16.0")
 
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
 }
