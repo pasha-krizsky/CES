@@ -1,4 +1,4 @@
-package com.ces.worker.docker
+package com.ces.worker.infra.docker
 
 import java.nio.file.Path
 import java.time.Instant

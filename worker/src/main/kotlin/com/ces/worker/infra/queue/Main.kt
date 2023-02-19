@@ -1,9 +1,9 @@
-package com.ces.worker.queue
+package com.ces.worker.infra.queue
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 
-const val QUEUE_NAME = "test-queue"
+const val QUEUE_NAME = "code-execution-requests"
 const val CONNECTION_NAME = "amqp://guest:guest@localhost:5672"
 
 // To start RabbitMQ in Docker:

@@ -10,6 +10,10 @@ plugins {
     kotlin("plugin.serialization") version "1.8.10"
 }
 
+tasks.getByName<Test>("test") {
+    useJUnitPlatform()
+}
+
 group = "com.ces"
 version = cesVersion
 
@@ -26,8 +30,12 @@ dependencies {
     implementation("io.netty:netty-all:4.1.87.Final")
     implementation("com.rabbitmq:amqp-client:5.16.0")
     implementation("io.minio:minio:8.5.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
 
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
+    testImplementation("io.kotest:kotest-assertions-core:5.5.5")
+    testImplementation("io.kotest:kotest-assertions-json:5.5.5")
+    testImplementation("io.kotest:kotest-runner-junit5:5.5.5")
+    testImplementation("io.kotest.extensions:kotest-extensions-testcontainers:1.3.4")
 }
 
 tasks.jar {

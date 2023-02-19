@@ -1,4 +1,4 @@
-package com.ces.worker.queue
+package com.ces.worker.infra.queue
 
 import com.rabbitmq.client.CancelCallback
 import com.rabbitmq.client.Connection

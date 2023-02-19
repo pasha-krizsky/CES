@@ -1,4 +1,4 @@
-package com.ces.worker.docker
+package com.ces.worker.infra.docker
 
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.Unpooled.EMPTY_BUFFER
