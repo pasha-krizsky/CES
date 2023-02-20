@@ -21,7 +21,7 @@ class RabbitMessageQueueTest : StringSpec({
     "should send and receive message" {
         val messageToSend = Message("test message")
 
-        val queue = RabbitMessageQueue(queueName, connectionName)
+        val queue = RabbitMessageQueue(connectionName, queueName)
         queue.sendMessage(messageToSend)
         val receivedMessage = queue.receiveMessage()
 

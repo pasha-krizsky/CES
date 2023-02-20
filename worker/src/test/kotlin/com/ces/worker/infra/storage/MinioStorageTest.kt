@@ -8,7 +8,6 @@ import io.kotest.matchers.shouldBe
 import io.minio.MinioAsyncClient
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy
-import java.io.File
 import java.time.Duration
 
 class MinioStorageTest : StringSpec({
@@ -18,6 +17,7 @@ class MinioStorageTest : StringSpec({
     val minioEndpoint = "http://127.0.0.1:9000"
     val accessKey = "minioadmin"
     val secretKey = "minioadmin"
+    val bucketName = "test-bucket"
 
     val sourceFile = tempfile()
 
@@ -37,7 +37,6 @@ class MinioStorageTest : StringSpec({
     }
 
     "should upload and download file" {
-        val bucketName = "test-bucket"
         val objectPath = "test/${sourceFile.name}"
         val sourceFileContent = "test content"
         sourceFile.writeText(sourceFileContent)
@@ -49,9 +48,8 @@ class MinioStorageTest : StringSpec({
         val minioStorage = MinioStorage(minioClient)
         minioStorage.createBucket(bucketName)
         minioStorage.uploadFile(bucketName, sourceFile.absolutePath, objectPath)
-        val resultPath = sourceFile.absolutePath + "-result"
-        minioStorage.downloadFile(bucketName, objectPath, resultPath)
-        val resultFile = File(resultPath)
+        val resultPath = sourceFile.absolutePath + "_result"
+        val resultFile = minioStorage.downloadFile(bucketName, objectPath, resultPath)
 
         resultFile.readText() shouldBe sourceFileContent
 

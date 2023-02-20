@@ -12,11 +12,13 @@ import com.rabbitmq.client.Channel as RabbitChannel
 import kotlinx.coroutines.channels.Channel as CoroutineChannel
 
 class RabbitMessageQueue(
-    private val queueName: String,
     connectionName: String,
+    private val queueName: String,
+    prefetchCount: Int = 1,
 ) : MessageQueue {
 
-    private val deliveryChannel = CoroutineChannel<Message>(capacity = 1)
+    // TODO use dependency injection, share connections/channels between queues
+    private val deliveryChannel = CoroutineChannel<ReceivedMessage>(capacity = 1)
 
     private val rabbitConnection: Connection
     private val rabbitChannel: RabbitChannel
@@ -30,24 +32,33 @@ class RabbitMessageQueue(
         rabbitChannel = rabbitConnection.createChannel()
         deliveryHandler = DeliverCallback { _, delivery ->
             runBlocking {
-                val message = Message(String(delivery.body, UTF_8))
+                val messageId = delivery.envelope.deliveryTag.toString()
+                val messageContent = String(delivery.body, UTF_8)
+                val message = ReceivedMessage(messageId, messageContent)
                 deliveryChannel.send(message)
-                rabbitChannel.basicAck(delivery.envelope.deliveryTag, false)
             }
         }
         cancelHandler = CancelCallback { _ -> }
 
-        rabbitChannel.basicQos(RABBIT_PREFETCH_COUNT)
+        rabbitChannel.basicQos(prefetchCount)
         rabbitChannel.queueDeclare(queueName, false, false, false, null)
         rabbitChannel.basicConsume(queueName, AUTO_ACC, CONSUMER_TAG, deliveryHandler, cancelHandler)
     }
 
-    override suspend fun receiveMessage(): Message {
+    override suspend fun sendMessage(message: Message) = withContext(Dispatchers.IO) {
+        rabbitChannel.basicPublish(EXCHANGE_NAME, queueName, null, message.content.toByteArray(UTF_8))
+    }
+
+    override suspend fun receiveMessage(): ReceivedMessage {
         return deliveryChannel.receive()
     }
 
-    override suspend fun sendMessage(message: Message) = withContext(Dispatchers.IO) {
-        rabbitChannel.basicPublish(EXCHANGE_NAME, queueName, null, message.content.toByteArray(UTF_8))
+    override suspend fun markProcessed(id: DeliveryId) {
+        rabbitChannel.basicAck(id.toLong(), false)
+    }
+
+    override suspend fun markUnprocessed(id: DeliveryId, requeue: Boolean) {
+        rabbitChannel.basicNack(id.toLong(), false, requeue)
     }
 
     override fun close() {
@@ -58,7 +69,6 @@ class RabbitMessageQueue(
     companion object {
         const val EXCHANGE_NAME = ""
         const val CONSUMER_TAG = "worker"
-        const val RABBIT_PREFETCH_COUNT = 1
         const val AUTO_ACC = false
     }
 }
