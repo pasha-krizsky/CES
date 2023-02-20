@@ -33,6 +33,8 @@ class NettySocketClient(socketPath: String) {
 
     private val responseChannel = CoroutineChannel<Response>()
     private val requestChannel: NettyChannel
+
+    // TODO Works only on Linux, should be changed
     private val epollEventLoopGroup: EpollEventLoopGroup
 
     private val responseHandler = object : SimpleChannelInboundHandler<HttpObject>() {
@@ -40,6 +42,7 @@ class NettySocketClient(socketPath: String) {
         private var headers = mutableMapOf<String, String>()
         private var body = ByteArray(0)
 
+        // TODO Find better way to integrate it with coroutines
         override fun channelRead0(ctx: ChannelHandlerContext, msg: HttpObject) = runBlocking {
             if (msg is HttpResponse) {
                 status = msg.status().code()

@@ -33,23 +33,18 @@ enum class ContainerStatus {
     private fun isFinal() = this == EXITED || this == DEAD || this == NOT_FOUND
 }
 
-data class PingResponse(
-    val responseStatus: ResponseStatus,
-    val pingResponse: String
-)
+abstract class AbstractResponse(val status: ResponseStatus) {
+    fun isInformational() = status in 100..199
+    fun isSuccessful() = status in 200..299
+    fun isRedirection() = status in 300..399
+    fun isClientError() = status in 400..499
+    fun isServerError() = status in 500..599
+}
 
-data class CreateContainerResponse(
-    val responseStatus: ResponseStatus,
-    val containerId: ContainerId
-)
-
-data class StartContainerResponse(
-    val responseStatus: ResponseStatus
-)
-
-data class CopyFileResponse(
-    val responseStatus: ResponseStatus
-)
+class PingResponse(status: ResponseStatus, val pingResponse: String) : AbstractResponse(status)
+class CreateContainerResponse(status: ResponseStatus, val containerId: ContainerId) : AbstractResponse(status)
+class StartContainerResponse(status: ResponseStatus) : AbstractResponse(status)
+class CopyFileResponse(status: ResponseStatus) : AbstractResponse(status)
 
 data class LogChunk(val timestamp: Instant, val content: String)
 
@@ -59,6 +54,7 @@ data class ContainerLogsResponse(
     val stderr: List<LogChunk>,
     val lastTimestamp: Instant
 ) {
+    // TODO refactor me
     fun mergeToString(): String {
         var stdoutPtr = 0
         var stderrPtr = 0

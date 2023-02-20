@@ -1,20 +1,15 @@
 package com.ces.worker
 
-import com.ces.worker.infra.docker.ContainerLogsResponse
+import com.ces.worker.config.*
 import com.ces.worker.infra.docker.NettyDockerImpl
 import com.ces.worker.infra.docker.NettySocketClient
-import com.ces.worker.infra.tar.compress
-import kotlinx.coroutines.delay
+import com.ces.worker.infra.queue.RabbitMessageQueue
+import com.ces.worker.infra.storage.MinioStorage
+import io.minio.MinioAsyncClient
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeoutOrNull
-import java.io.File
-import java.nio.file.Path
-import java.time.Instant.EPOCH
-import java.util.UUID.randomUUID
-import kotlin.io.path.deleteIfExists
 
-
-val SCRIPT_SOURCE_CODE_2 = """
+// TODO Move to test
+private val SCRIPT_SOURCE_CODE = """
 namespace HelloWorld
 {
     class Hello {
@@ -31,72 +26,72 @@ namespace HelloWorld
 """.trimIndent()
 
 fun main(): Unit = runBlocking {
-    executeCode(SCRIPT_SOURCE_CODE)
+    val config = applicationConfig()
+
+    // TODO move dependencies creation from main
+    val docker = NettyDockerImpl(NettySocketClient(config.docker.socket))
+    val requestQueue = getRequestQueue(config)
+    val responseQueue = getResponseQueue(config)
+    val minioClient: MinioAsyncClient = MinioAsyncClient.builder()
+        .endpoint(config.minio.endpoint)
+        .credentials(config.minio.accessKey, config.minio.secretKey)
+        .build()
+    val minioStorage = MinioStorage(minioClient)
+
+    val flow = CodeExecutionFlow(config, docker, requestQueue, responseQueue, minioStorage)
+
+    // TODO Doesn't look good, change
+    while (true) {
+        flow.run()
+    }
 }
 
-suspend fun executeCode(sourceCode: String) {
+private fun getRequestQueue(config: ApplicationConfig) = RabbitMessageQueue(
+    config.broker.connectionName,
+    config.codeExecutionRequestQueue.name,
+    config.codeExecutionRequestQueue.prefetchCount,
+)
 
-    println("Start execution...")
-    val client = NettySocketClient(DOCKER_SOCKET)
-    val docker = NettyDockerImpl(client)
+private fun getResponseQueue(config: ApplicationConfig) = RabbitMessageQueue(
+    config.broker.connectionName,
+    config.codeExecutionResponseQueue.name
+)
 
-    val pingResponse = docker.ping()
-    println(pingResponse)
-
-    val scriptName = randomUUID().toString() + SCRIPT_EXTENSION
-
-    val createContainerResponse = docker.createContainer(RUNNER_IMAGE_NAME, scriptName)
-    println(createContainerResponse)
-
-    val containerId = createContainerResponse.containerId
-    println("containerId = $containerId")
-
-    val sourcePath = "$WORKER_DIR/$scriptName"
-    val sourceCodeFile = File(sourcePath)
-    sourceCodeFile.printWriter().use { out ->
-        out.print(sourceCode)
-    }
-
-    compress(WORKER_SCRIPT_TAR_PATH, sourceCodeFile)
-
-    val sourceCodeTar = Path.of(WORKER_SCRIPT_TAR_PATH)
-    val copyFileResponse = docker.copyFile(
-        containerId,
-        sourceCodeTar,
-        Path.of(RUNNER_HOME_PATH)
+// TODO Move to file
+private fun applicationConfig() = ApplicationConfig(
+    docker = DockerConfig("/var/run/docker.sock"),
+    runner = RunnerConfig(
+        imageName = "runner-mono",
+        workDir = "/home/newuser",
+        codeExecutionTimeoutMillis = 5_000,
+        logsPollIntervalMillis = 100,
+        container = RunnerContainerConfig(
+            capDrop = "ALL",
+            cgroupnsMode = "private",
+            networkMode = "none",
+            cpusetCpus = "1",
+            cpuQuota = 10000000,
+            memory = 100000000,
+            memorySwap = 500000000,
+        )
+    ),
+    bucketName = "code-execution",
+    localStoragePath = "/tmp",
+    broker = MessageBrokerConfig(
+        connectionName = "amqp://guest:guest@localhost:5672"
+    ),
+    codeExecutionRequestQueue = QueueConfig(
+        name = "code-execution-request",
+        prefetchCount = 1,
+    ),
+    codeExecutionResponseQueue = QueueConfig(
+        name = "code-execution-response",
+        prefetchCount = 1,
+    ),
+    minio = MinioConfig(
+        endpoint = "http://127.0.0.1:9000",
+        accessKey = "minioadmin",
+        secretKey = "minioadmin",
     )
-    println(copyFileResponse)
-    sourceCodeTar.deleteIfExists()
-    sourceCodeFile.delete()
+)
 
-    val startContainerResponse = docker.startContainer(containerId)
-    println(startContainerResponse)
-
-    val result = withTimeoutOrNull(CODE_EXECUTION_TIMEOUT) {
-        var logsTimestamp = EPOCH
-        do {
-            val inspectContainerResponse = docker.inspectContainer(containerId)
-            val containerStatus = inspectContainerResponse.containerStatus
-            val logs = docker.containerLogs(containerId, logsTimestamp)
-
-            sendLogs(logs)
-            logsTimestamp = logs.lastTimestamp
-            delay(50)
-        } while (containerStatus.isNotFinal())
-    }
-    if (result == null) {
-        val killContainerResponse = docker.killContainer(containerId)
-        println(killContainerResponse)
-    }
-
-    val removeContainerResponse = docker.removeContainer(containerId)
-    println(removeContainerResponse)
-
-    client.close()
-}
-
-fun sendLogs(logs: ContainerLogsResponse) {
-    if (logs.stdout.isEmpty() && logs.stderr.isEmpty())
-        return
-    println(logs.mergeToString())
-}

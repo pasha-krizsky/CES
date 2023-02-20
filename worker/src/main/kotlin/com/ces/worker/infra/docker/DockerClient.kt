@@ -10,6 +10,7 @@ import kotlin.io.path.pathString
 import kotlin.io.path.readBytes
 import kotlin.text.Charsets.UTF_8
 
+// TODO move to config
 const val CAP_DROP = "ALL"
 const val CGROUPNS_MODE = "private"
 const val NETWORK_MODE = "none"
@@ -18,6 +19,7 @@ const val CPU_QUOTA = 10000000
 const val MEMORY = 100000000
 const val MEMORY_SWAP = 500000000
 
+// TODO Consider implementing better docker client
 class NettyDockerImpl(private val client: NettySocketClient) : Docker {
 
     override suspend fun ping(): PingResponse {
@@ -25,6 +27,7 @@ class NettyDockerImpl(private val client: NettySocketClient) : Docker {
         return PingResponse(response.status, response.body.toString(UTF_8))
     }
 
+    // TODO extend configuration and pass it as parameter
     override suspend fun createContainer(image: ImageName, scriptName: String): CreateContainerResponse {
         val response = client.httpPost(
             v41("containers/create"),

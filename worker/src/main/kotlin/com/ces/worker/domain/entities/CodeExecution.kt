@@ -1,9 +1,7 @@
 package com.ces.worker.domain.entities
 
-import com.ces.worker.domain.types.CodeExecutionFailureReason
+import com.ces.worker.domain.types.*
 import com.ces.worker.domain.types.CodeExecutionFailureReason.NONE
-import com.ces.worker.domain.types.CodeExecutionId
-import com.ces.worker.domain.types.CodeExecutionState
 import com.ces.worker.domain.types.CodeExecutionState.*
 import kotlinx.datetime.Instant
 
@@ -12,6 +10,8 @@ data class CodeExecution(
     val createdAt: Instant,
     val state: CodeExecutionState,
     val sourceCodePath: String,
+    val language: ProgrammingLanguage,
+    val compiler: CodeCompilerType,
 
     val finishedAt: Instant? = null,
     val exitCode: Int? = null,
@@ -24,6 +24,9 @@ data class CodeExecution(
     }
 
     private fun validate() {
+        // TODO cover all checks in tests
+        check(compiler.supports(language)) { "compiler '$compiler' does not support '$language' language" }
+
         check(state != FAILED || failureReason != NONE) { "failureReason must be set for failed state" }
         check(state != COMPLETED || failureReason == NONE) { "failureReason must be empty for completed state" }
 

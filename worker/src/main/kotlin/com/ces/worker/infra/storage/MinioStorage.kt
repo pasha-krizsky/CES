@@ -2,6 +2,7 @@ package com.ces.worker.infra.storage
 
 import io.minio.*
 import kotlinx.coroutines.future.await
+import java.io.File
 
 class MinioStorage(
     private val minioClient: MinioAsyncClient,
@@ -17,7 +18,6 @@ class MinioStorage(
     }
 
     override suspend fun uploadFile(bucketName: String, localSource: String, storageDestination: String) {
-        println("Uploading...")
         minioClient.uploadObject(
             UploadObjectArgs.builder()
                 .bucket(bucketName)
@@ -25,11 +25,9 @@ class MinioStorage(
                 .filename(localSource)
                 .build()
         ).await()
-        println("Uploaded")
     }
 
-    override suspend fun downloadFile(bucketName: String, storageSource: String, localDestination: String) {
-        println("Downloading...")
+    override suspend fun downloadFile(bucketName: String, storageSource: String, localDestination: String): File {
         minioClient.downloadObject(
             DownloadObjectArgs.builder()
                 .bucket(bucketName)
@@ -37,6 +35,6 @@ class MinioStorage(
                 .filename(localDestination)
                 .build()
         ).await()
-        println("Downloaded")
+        return File(localDestination)
     }
 }
