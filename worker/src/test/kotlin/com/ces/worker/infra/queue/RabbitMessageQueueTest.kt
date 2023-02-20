@@ -8,12 +8,12 @@ import org.testcontainers.containers.GenericContainer
 
 class RabbitMessageQueueTest : StringSpec({
 
-    val rabbitImage = "rabbitmq:3-management"
+    val imageName = "rabbitmq:3-management"
     val queueName = "test-queue"
     val connectionName = "amqp://guest:guest@localhost:5672"
 
     // docker run -d --hostname rabbit-mq-node --name rabbit-mq-instance -p 15672:15672 -p 5672:5672 rabbitmq:3-management
-    install(TestContainerExtension(GenericContainer(rabbitImage))) {
+    install(TestContainerExtension(GenericContainer(imageName))) {
         portBindings = listOf("5672:5672", "15672:15672")
         withExposedPorts(5672, 15672)
     }
