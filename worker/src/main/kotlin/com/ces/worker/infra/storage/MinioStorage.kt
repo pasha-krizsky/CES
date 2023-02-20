@@ -3,12 +3,9 @@ package com.ces.worker.infra.storage
 import io.minio.*
 import kotlinx.coroutines.future.await
 
-class MinioStorage : ObjectStorage {
-
-    private val minioClient: MinioAsyncClient = MinioAsyncClient.builder()
-        .endpoint(MIN_IO_ENDPOINT)
-        .credentials(ACCESS_KEY, SECRET_KEY)
-        .build()
+class MinioStorage(
+    private val minioClient: MinioAsyncClient,
+) : ObjectStorage {
 
     override suspend fun createBucket(bucketName: String) {
         val exists = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build()).await()

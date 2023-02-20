@@ -8,6 +8,7 @@ import com.ces.worker.infra.queue.Message
 import com.ces.worker.infra.queue.RabbitMessageQueue
 import com.ces.worker.infra.storage.MinioStorage
 import com.ces.worker.infra.tar.compress
+import io.minio.MinioAsyncClient
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock.System.now
 import kotlinx.serialization.decodeFromString
@@ -71,7 +72,11 @@ class Test {
 
         // 2. Store tar
         println("Uploading source code to Object Storage...")
-        val minioStorage = MinioStorage()
+        val minioClient: MinioAsyncClient = MinioAsyncClient.builder()
+            .endpoint("http://127.0.0.1:9000")
+            .credentials("minioadmin", "minioadmin")
+            .build()
+        val minioStorage = MinioStorage(minioClient)
         val bucketName = "code-executions"
         minioStorage.createBucket(bucketName)
         val sourceCodePath = "$codeExecutionId/source.cs"

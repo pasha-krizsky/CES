@@ -17,6 +17,7 @@ data class CodeExecutionFinishedEvent(
     val failureReason: CodeExecutionFailureReason = NONE,
 ) {
     init {
+        check(state.isFinal()) { "state must be final" }
         check(state != FAILED || failureReason != NONE) { "failureReason must be set for failed state" }
         check(state != CodeExecutionState.COMPLETED || failureReason == NONE) { "failureReason must be empty for completed state" }
     }
