@@ -9,6 +9,7 @@ import com.ces.domain.types.CodeExecutionState.COMPLETED
 import com.ces.domain.types.CodeExecutionState.FAILED
 import com.ces.infrastructure.docker.ContainerId
 import com.ces.infrastructure.docker.ContainerLogsResponse
+import com.ces.infrastructure.docker.CreateContainerParams
 import com.ces.infrastructure.docker.Docker
 import com.ces.infrastructure.minio.ObjectStorage
 import com.ces.infrastructure.rabbitmq.DeliveryId
@@ -27,7 +28,6 @@ import org.apache.commons.compress.utils.IOUtils
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.nio.file.Path
 import java.time.Instant.EPOCH
 
 class CodeExecutionFlow(
@@ -82,10 +82,25 @@ class CodeExecutionFlow(
         scriptName: String,
     ): ContainerId {
         // TODO Use language and compiler to determine runner image
-        val response = docker.createContainer(config.runner.imageName, scriptName)
+        val response = docker.createContainer(config.runner.imageName, createContainerParams(scriptName))
         if (response.isSuccessful())
             return response.containerId
         throw CodeExecutionException("Failed to create container, got ${response.status} response status")
+    }
+
+    private fun createContainerParams(sourceCodePath: String) = run {
+        with(config.runner.container) {
+            return@with CreateContainerParams(
+                cmd = sourceCodePath,
+                capDrop = capDrop,
+                cgroupnsMode = cgroupnsMode,
+                networkMode = networkMode,
+                cpusetCpus = cpusetCpus,
+                cpuQuota = cpuQuota,
+                memory = memory,
+                memorySwap = memorySwap,
+            )
+        }
     }
 
     private fun createTar(id: CodeExecutionId, sourceCodeFile: File): File {
@@ -95,7 +110,7 @@ class CodeExecutionFlow(
     }
 
     private suspend fun copyCodeToContainer(containerId: ContainerId, sourceCodeTar: File) {
-        val response = docker.copyFile(containerId, sourceCodeTar.toPath(), Path.of(config.runner.workDir))
+        val response = docker.copyFile(containerId, sourceCodeTar.toPath(), config.runner.workDir)
         if (!response.isSuccessful())
             throw CodeExecutionException("Failed to copy file to container, got ${response.status} response status")
     }

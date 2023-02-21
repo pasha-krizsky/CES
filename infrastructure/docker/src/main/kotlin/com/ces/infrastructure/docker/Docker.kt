@@ -10,11 +10,11 @@ typealias ResponseStatus = Int
 interface Docker {
     suspend fun ping(): PingResponse
 
-    suspend fun createContainer(image: ImageName, scriptName: String): CreateContainerResponse
+    suspend fun createContainer(image: ImageName, params: CreateContainerParams): CreateContainerResponse
 
     suspend fun startContainer(containerId: ContainerId): StartContainerResponse
 
-    suspend fun copyFile(containerId: ContainerId, sourceTar: Path, destination: Path): CopyFileResponse
+    suspend fun copyFile(containerId: ContainerId, sourceTar: Path, destination: String): CopyFileResponse
 
     suspend fun containerLogs(containerId: ContainerId, since: Instant): ContainerLogsResponse
 
@@ -25,6 +25,18 @@ interface Docker {
     suspend fun removeContainer(containerId: ContainerId): RemoveContainerResponse
 }
 
+// TODO the list of params is not full, fix it
+data class CreateContainerParams(
+    val cmd: String,
+    val capDrop: String,
+    val cgroupnsMode: String,
+    val networkMode: String,
+    val cpusetCpus: String,
+    val cpuQuota: Long,
+    val memory: Long,
+    val memorySwap: Long,
+)
+
 enum class ContainerStatus {
     CREATED, RESTARTING, RUNNING, REMOVING, PAUSED, EXITED, DEAD, NOT_FOUND;
 
@@ -33,7 +45,9 @@ enum class ContainerStatus {
     private fun isFinal() = this == EXITED || this == DEAD || this == NOT_FOUND
 }
 
-abstract class AbstractResponse(val status: ResponseStatus) {
+abstract class AbstractResponse {
+    abstract val status: ResponseStatus
+
     fun isInformational() = status in 100..199
     fun isSuccessful() = status in 200..299
     fun isRedirection() = status in 300..399
@@ -41,10 +55,23 @@ abstract class AbstractResponse(val status: ResponseStatus) {
     fun isServerError() = status in 500..599
 }
 
-class PingResponse(status: ResponseStatus, val pingResponse: String) : AbstractResponse(status)
-class CreateContainerResponse(status: ResponseStatus, val containerId: ContainerId) : AbstractResponse(status)
-class StartContainerResponse(status: ResponseStatus) : AbstractResponse(status)
-class CopyFileResponse(status: ResponseStatus) : AbstractResponse(status)
+data class PingResponse(
+    override val status: ResponseStatus,
+    val pingResponse: String,
+) : AbstractResponse()
+
+class CreateContainerResponse(
+    override val status: ResponseStatus,
+    val containerId: ContainerId,
+) : AbstractResponse()
+
+class StartContainerResponse(
+    override val status: ResponseStatus,
+) : AbstractResponse()
+
+class CopyFileResponse(
+    override val status: ResponseStatus,
+) : AbstractResponse()
 
 data class LogChunk(val timestamp: Instant, val content: String)
 
@@ -52,7 +79,7 @@ data class ContainerLogsResponse(
     val responseStatus: ResponseStatus,
     val stdout: List<LogChunk>,
     val stderr: List<LogChunk>,
-    val lastTimestamp: Instant
+    val lastTimestamp: Instant,
 ) {
     // TODO refactor me
     fun mergeToString(): String {
@@ -89,13 +116,13 @@ data class ContainerLogsResponse(
 
 data class InspectContainerResponse(
     val responseStatus: ResponseStatus,
-    val containerStatus: ContainerStatus
+    val containerStatus: ContainerStatus,
 )
 
 data class KillContainerResponse(
-    val responseStatus: ResponseStatus
+    val responseStatus: ResponseStatus,
 )
 
 data class RemoveContainerResponse(
-    val responseStatus: ResponseStatus
+    val responseStatus: ResponseStatus,
 )
