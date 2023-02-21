@@ -1,16 +1,6 @@
 package com.ces.worker
 
-import com.ces.worker.domain.events.CodeExecutionRequestedEvent
-import com.ces.worker.domain.types.CodeCompilerType
-import com.ces.worker.domain.types.CodeExecutionId
-import com.ces.worker.domain.types.ProgrammingLanguage
-import com.ces.worker.infra.queue.RabbitMessageQueue
-import com.ces.worker.infra.storage.MinioStorage
-import com.ces.worker.infra.tar.compress
-import io.minio.MinioAsyncClient
 import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.Clock.System.now
-import java.io.File
 
 // TODO Delete me
 const val MIN_IO_ENDPOINT = "http://127.0.0.1:9000"
@@ -46,6 +36,23 @@ namespace HelloWorld
             for (int i = 0; i < 10; i++) {
                 System.Console.WriteLine("Hello World " + i);
                 System.Console.Error.WriteLine("Hello Error " + i);
+            }
+        }
+    }
+}
+""".trimIndent()
+
+// TODO Move to test
+private val SCRIPT_SOURCE_CODE_2 = """
+namespace HelloWorld
+{
+    class Hello {
+        static void Main(string[] args)
+        {
+            for (int i = 0; i < 10; i++) {
+                System.Console.WriteLine("Hello World " + i);
+                System.Console.Error.WriteLine("Hello Error " + i);
+                System.Threading.Thread.Sleep(1000);
             }
         }
     }
