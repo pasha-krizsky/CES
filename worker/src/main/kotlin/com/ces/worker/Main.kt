@@ -1,29 +1,12 @@
 package com.ces.worker
 
+import com.ces.infrastructure.docker.NettyDockerImpl
+import com.ces.infrastructure.docker.NettySocketClient
+import com.ces.infrastructure.minio.MinioStorage
+import com.ces.infrastructure.rabbitmq.RabbitMessageQueue
 import com.ces.worker.config.*
-import com.ces.worker.infra.docker.NettyDockerImpl
-import com.ces.worker.infra.docker.NettySocketClient
-import com.ces.worker.infra.queue.RabbitMessageQueue
-import com.ces.worker.infra.storage.MinioStorage
 import io.minio.MinioAsyncClient
 import kotlinx.coroutines.runBlocking
-
-// TODO Move to test
-private val SCRIPT_SOURCE_CODE = """
-namespace HelloWorld
-{
-    class Hello {
-        static void Main(string[] args)
-        {
-            for (int i = 0; i < 10; i++) {
-                System.Console.WriteLine("Hello World " + i);
-                System.Console.Error.WriteLine("Hello Error " + i);
-                System.Threading.Thread.Sleep(1000);
-            }
-        }
-    }
-}
-""".trimIndent()
 
 fun main(): Unit = runBlocking {
     val config = applicationConfig()

@@ -8,6 +8,7 @@ plugins {
     id("kotlin")
     id("io.ktor.plugin") version "2.2.3"
     kotlin("plugin.serialization") version "1.8.10"
+//    id("com.github.johnrengelman.shadow") version "7.1.2"
 }
 
 tasks.getByName<Test>("test") {
@@ -22,13 +23,16 @@ repositories {
 }
 
 dependencies {
+    implementation(project(":domain"))
+    implementation(project(":infrastructure:docker"))
+    implementation(project(":infrastructure:rabbitmq"))
+    implementation(project(":infrastructure:minio"))
+
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.6.4")
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
     implementation("org.apache.commons:commons-compress:1.22")
-    implementation("io.netty:netty-all:4.1.87.Final")
-    implementation("com.rabbitmq:amqp-client:5.16.0")
     implementation("io.minio:minio:8.5.2")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
 
