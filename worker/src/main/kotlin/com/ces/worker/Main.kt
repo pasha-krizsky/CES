@@ -1,18 +1,26 @@
 package com.ces.worker
 
-import com.ces.infrastructure.docker.NettyDockerImpl
-import com.ces.infrastructure.docker.NettySocketClient
+import com.ces.infrastructure.docker.DockerClient
 import com.ces.infrastructure.minio.MinioStorage
 import com.ces.infrastructure.rabbitmq.RabbitMessageQueue
 import com.ces.worker.config.*
+import com.github.dockerjava.core.DefaultDockerClientConfig
+import com.github.dockerjava.httpclient5.ApacheDockerHttpClient
 import io.minio.MinioAsyncClient
 import kotlinx.coroutines.runBlocking
+import java.time.Duration
 
 fun main(): Unit = runBlocking {
     val config = applicationConfig()
 
-    // TODO move dependencies creation from main
-    val docker = NettyDockerImpl(NettySocketClient(config.docker.socket))
+    // TODO move dependencies creation and other logic from main
+    val httpClient = httpDockerClient(
+        DefaultDockerClientConfig
+            .createDefaultConfigBuilder()
+            .withDockerHost(config.docker.socket)
+            .build()
+    )
+    val docker = DockerClient(httpClient)
     val requestQueue = getRequestQueue(config)
     val responseQueue = getResponseQueue(config)
     val minioClient: MinioAsyncClient = MinioAsyncClient.builder()
@@ -29,6 +37,14 @@ fun main(): Unit = runBlocking {
     }
 }
 
+private fun httpDockerClient(dockerConfig: DefaultDockerClientConfig) =
+    ApacheDockerHttpClient.Builder()
+        .dockerHost(dockerConfig.dockerHost)
+        .maxConnections(10)
+        .connectionTimeout(Duration.ofSeconds(10))
+        .responseTimeout(Duration.ofMinutes(5))
+        .build()
+
 private fun getRequestQueue(config: ApplicationConfig) = RabbitMessageQueue(
     config.broker.connectionName,
     config.codeExecutionRequestQueue.name,
@@ -40,9 +56,9 @@ private fun getResponseQueue(config: ApplicationConfig) = RabbitMessageQueue(
     config.codeExecutionResponseQueue.name
 )
 
-// TODO Move to file
+// TODO Move configuration to file
 private fun applicationConfig() = ApplicationConfig(
-    docker = DockerConfig("/var/run/docker.sock"),
+    docker = DockerConfig("npipe:////./pipe/docker_engine"),
     runner = RunnerConfig(
         imageName = "runner-mono",
         workDir = "/home/newuser",

@@ -1,107 +1,166 @@
 package com.ces.infrastructure.docker
 
+import com.github.dockerjava.httpclient5.ApacheDockerHttpClient
+import com.github.dockerjava.transport.DockerHttpClient.Request
+import com.github.dockerjava.transport.DockerHttpClient.Request.Method.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
+import org.apache.commons.io.IOUtils
+import java.io.InputStream
 import java.math.BigInteger
 import java.nio.file.Path
 import java.time.Instant
-import java.time.Instant.EPOCH
-import kotlin.io.path.pathString
-import kotlin.io.path.readBytes
-import kotlin.text.Charsets.UTF_8
+import kotlin.io.path.inputStream
 
-// TODO move to config
-const val CAP_DROP = "ALL"
-const val CGROUPNS_MODE = "private"
-const val NETWORK_MODE = "none"
-const val CPUSET_CPUS = "1"
-const val CPU_QUOTA = 10000000
-const val MEMORY = 100000000
-const val MEMORY_SWAP = 500000000
+class DockerClient(
+    private val httpClient: ApacheDockerHttpClient,
+) : Docker {
 
-// TODO Consider implementing better docker client
-class NettyDockerImpl(private val client: NettySocketClient) : Docker {
+    override suspend fun ping(): PingResponse = withContext(Dispatchers.IO) {
+        val request: Request = Request.builder()
+            .method(GET)
+            .path("/_ping")
+            .build()
 
-    override suspend fun ping(): PingResponse {
-        val response = client.httpGet(v41("_ping"))
-        return PingResponse(response.status, response.body.toString(UTF_8))
+        httpClient.execute(request).let { response ->
+            return@withContext PingResponse(response.statusCode, IOUtils.toString(response.body, "UTF-8"))
+        }
     }
 
-    // TODO extend configuration and pass it as parameter
-    override suspend fun createContainer(image: ImageName, scriptName: String): CreateContainerResponse {
-        val response = client.httpPost(
-            v41("containers/create"),
-            body = """
-                { 
-                   "Image": "$image",
-                    "Cmd": [
-                        "$scriptName"
-                    ],
-                   "HostConfig": {
-                       "CapDrop": "$CAP_DROP",
-                       "CgroupnsMode": "$CGROUPNS_MODE",
-                       "NetworkMode": "$NETWORK_MODE",
-                       "CpusetCpus": "$CPUSET_CPUS",
-                       "CpuQuota": $CPU_QUOTA,
-                       "Memory": $MEMORY,
-                       "MemorySwap": $MEMORY_SWAP
-                   }
-                }
-                """.trimIndent()
-        )
-        return CreateContainerResponse(response.status, response.body.asString().containerId())
+    override suspend fun createContainer(
+        image: ImageName,
+        params: CreateContainerParams,
+    ): CreateContainerResponse = withContext(Dispatchers.IO) {
+        val request: Request = Request.builder()
+            .method(POST)
+            .path("/containers/create")
+            .putHeader("Content-Type", "application/json")
+            .body(
+                """
+                  { 
+                    "Image": "$image",
+                     "Cmd": [
+                       "${params.cmd}"
+                     ],
+                    "HostConfig": {
+                      "CapDrop": "${params.capDrop}",
+                      "CgroupnsMode": "${params.cgroupnsMode}",
+                      "NetworkMode": "${params.networkMode}",
+                      "CpusetCpus": "${params.cpusetCpus}",
+                      "CpuQuota": ${params.cpuQuota},
+                      "Memory": ${params.memory},
+                      "MemorySwap": ${params.memorySwap}
+                    }
+                  }
+                  """.trimIndent().byteInputStream()
+            )
+            .build()
+
+        httpClient.execute(request).let { response ->
+            val body = IOUtils.toString(response.body, "UTF-8")
+            return@withContext CreateContainerResponse(
+                response.statusCode,
+                body.containerId()
+            )
+        }
     }
 
-    override suspend fun startContainer(containerId: ContainerId): StartContainerResponse {
-        val response = client.httpPost(v41("containers/$containerId/start"))
-        return StartContainerResponse(response.status)
+    override suspend fun startContainer(
+        containerId: ContainerId,
+    ): StartContainerResponse = withContext(Dispatchers.IO) {
+        val request: Request = Request.builder()
+            .method(POST)
+            .path("/containers/$containerId/start")
+            .build()
+
+        httpClient.execute(request).let { response ->
+            return@withContext StartContainerResponse(response.statusCode)
+        }
     }
 
     override suspend fun copyFile(
         containerId: ContainerId,
         sourceTar: Path,
-        destination: Path,
-    ): CopyFileResponse {
-        val response = client.httpPut(
-            v41("containers/$containerId/archive?path=${destination.pathString}"),
-            headers = mapOf("content-type" to "application/x-tar"),
-            body = sourceTar.readBytes()
-        )
-        return CopyFileResponse(response.status)
+        destination: String,
+    ): CopyFileResponse = withContext(Dispatchers.IO) {
+        val request: Request = Request.builder()
+            .method(PUT)
+            .path("/containers/$containerId/archive?path=$destination")
+            .headers(mapOf("content-type" to "application/x-tar"))
+            .body(sourceTar.inputStream())
+            .build()
+
+        httpClient.execute(request).let { response ->
+            val body = IOUtils.toString(response.body, "UTF-8")
+            println(body)
+            return@withContext CopyFileResponse(response.statusCode)
+        }
     }
 
-    override suspend fun containerLogs(containerId: ContainerId, since: Instant): ContainerLogsResponse {
-        val nano = since.epochSecond.toString() + "." + since.nano
-        val response = client.httpGet(
-            v41(
-                "containers/$containerId/logs?tail=all&stdout=1&stderr=1&timestamps=true&since=$nano"
+    override suspend fun containerLogs(
+        containerId: ContainerId,
+        since: Instant,
+    ): ContainerLogsResponse = withContext(Dispatchers.IO) {
+        val timestamp = since.epochSecond.toString() + "." + since.nano
+        val request: Request = Request.builder()
+            .method(GET)
+            .path("/containers/$containerId/logs?tail=all&stdout=1&stderr=1&timestamps=true&since=$timestamp")
+            .build()
+
+        httpClient.execute(request).let { response ->
+            val (stdout, stderr, lastTimestamp) = parseLogs(response.body)
+            return@withContext ContainerLogsResponse(
+                response.statusCode,
+                stdout.filter { it.timestamp > since },
+                stderr.filter { it.timestamp > since },
+                lastTimestamp
             )
-        )
-        val (stdout, stderr, lastTimestamp) = parseLogs(response.body)
-        return ContainerLogsResponse(
-            response.status,
-            stdout.filter { it.timestamp > since },
-            stderr.filter { it.timestamp > since },
-            lastTimestamp
-        )
+        }
     }
 
-    override suspend fun inspectContainer(containerId: ContainerId): InspectContainerResponse {
-        val response = client.httpGet(v41("containers/$containerId/json"))
-        return InspectContainerResponse(response.status, response.body.asString().containerStatus())
+    override suspend fun inspectContainer(
+        containerId: ContainerId,
+    ) = withContext(Dispatchers.IO) {
+        val request: Request = Request.builder()
+            .method(GET)
+            .path("/containers/$containerId/json")
+            .build()
+
+        httpClient.execute(request).let { response ->
+            return@withContext InspectContainerResponse(
+                response.statusCode,
+                containerStatus(response.body.bufferedReader().use { it.readText() })
+            )
+        }
     }
 
-    override suspend fun killContainer(containerId: ContainerId): KillContainerResponse {
-        val response = client.httpPost(v41("containers/$containerId/kill"))
-        return KillContainerResponse(response.status)
+    override suspend fun killContainer(
+        containerId: ContainerId
+    ): KillContainerResponse = withContext(Dispatchers.IO) {
+        val request: Request = Request.builder()
+            .method(POST)
+            .path("/containers/$containerId/kill")
+            .build()
+
+        httpClient.execute(request).let { response ->
+            return@withContext KillContainerResponse(response.statusCode)
+        }
     }
 
-    override suspend fun removeContainer(containerId: ContainerId): RemoveContainerResponse {
-        val response = client.httpDelete(v41("containers/$containerId"))
-        return RemoveContainerResponse(response.status)
-    }
+    override suspend fun removeContainer(
+        containerId: ContainerId,
+    ): RemoveContainerResponse = withContext(Dispatchers.IO) {
+        val request: Request = Request.builder()
+            .method(DELETE)
+            .path("/containers/$containerId")
+            .build()
 
-    private fun v41(path: String) = "/v1.41/$path"
+        httpClient.execute(request).let { response ->
+            return@withContext RemoveContainerResponse(response.statusCode)
+        }
+    }
 
     private fun String.containerId() =
         Json.parseToJsonElement(this)
@@ -109,8 +168,8 @@ class NettyDockerImpl(private val client: NettySocketClient) : Docker {
             .toString()
             .trim('"')
 
-    private fun String.containerStatus(): ContainerStatus =
-        Json.parseToJsonElement(this)
+    private fun containerStatus(response: String): ContainerStatus =
+        Json.parseToJsonElement(response)
             .jsonObject["State"]
             ?.jsonObject?.get("Status")
             ?.toString()
@@ -120,11 +179,10 @@ class NettyDockerImpl(private val client: NettySocketClient) : Docker {
 
     data class ParsedLogs(val stdout: List<LogChunk>, val stderr: List<LogChunk>, val lastTimestamp: Instant)
 
-    private fun parseLogs(body: ResponseBody): ParsedLogs {
-        val inputStream = body.inputStream()
+    private fun parseLogs(inputStream: InputStream): ParsedLogs {
         val stdout = mutableListOf<LogChunk>()
         val stderr = mutableListOf<LogChunk>()
-        var lastTimestamp = EPOCH
+        var lastTimestamp = Instant.EPOCH
         while (true) {
             val header = inputStream.readNBytes(LOG_HEADER_LENGTH)
             if (header.isEmpty())
