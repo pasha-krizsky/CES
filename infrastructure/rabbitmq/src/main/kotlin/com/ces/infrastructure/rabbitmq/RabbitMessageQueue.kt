@@ -12,14 +12,14 @@ import com.rabbitmq.client.Channel as RabbitChannel
 import kotlinx.coroutines.channels.Channel as CoroutineChannel
 
 class RabbitMessageQueue(
-    connectionName: String,
     private val queueName: String,
+    connectionName: String,
     prefetchCount: Int = 1,
 ) : MessageQueue {
 
-    // TODO use dependency injection, share connections/channels between queues
-    private val deliveryChannel = CoroutineChannel<ReceivedMessage>(capacity = 1)
+    private val deliveryChannel = CoroutineChannel<ReceivedMessage>(capacity = prefetchCount)
 
+    // TODO share connections/channels between queues
     private val rabbitConnection: Connection
     private val rabbitChannel: RabbitChannel
 

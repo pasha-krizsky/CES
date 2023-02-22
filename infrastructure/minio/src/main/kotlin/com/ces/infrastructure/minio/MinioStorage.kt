@@ -17,24 +17,24 @@ class MinioStorage(
         }
     }
 
-    override suspend fun uploadFile(bucketName: String, localSource: String, storageDestination: String) {
+    override suspend fun uploadFile(bucketName: String, fromPath: String, toPath: String) {
         minioClient.uploadObject(
             UploadObjectArgs.builder()
                 .bucket(bucketName)
-                .`object`(storageDestination)
-                .filename(localSource)
+                .`object`(toPath)
+                .filename(fromPath)
                 .build()
         ).await()
     }
 
-    override suspend fun downloadFile(bucketName: String, storageSource: String, localDestination: String): File {
+    override suspend fun downloadFile(bucketName: String, fromPath: String, toPath: String): File {
         minioClient.downloadObject(
             DownloadObjectArgs.builder()
                 .bucket(bucketName)
-                .`object`(storageSource)
-                .filename(localDestination)
+                .`object`(fromPath)
+                .filename(toPath)
                 .build()
         ).await()
-        return File(localDestination)
+        return File(toPath)
     }
 }

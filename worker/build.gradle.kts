@@ -40,6 +40,10 @@ dependencies {
     testImplementation("io.kotest:kotest-assertions-json:5.5.5")
     testImplementation("io.kotest:kotest-runner-junit5:5.5.5")
     testImplementation("io.kotest.extensions:kotest-extensions-testcontainers:1.3.4")
+
+    testImplementation(testFixtures(project(":infrastructure:minio")))
+    testImplementation(testFixtures(project(":infrastructure:rabbitmq")))
+    testImplementation(testFixtures(project(":infrastructure:docker")))
 }
 
 tasks.jar {

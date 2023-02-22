@@ -21,8 +21,8 @@ fun main(): Unit = runBlocking {
             .build()
     )
     val docker = DockerClient(httpClient)
-    val requestQueue = getRequestQueue(config)
-    val responseQueue = getResponseQueue(config)
+    val requestQueue = requestQueue(config)
+    val responseQueue = responseQueue(config)
     val minioClient: MinioAsyncClient = MinioAsyncClient.builder()
         .endpoint(config.minio.endpoint)
         .credentials(config.minio.accessKey, config.minio.secretKey)
@@ -45,15 +45,15 @@ private fun httpDockerClient(dockerConfig: DefaultDockerClientConfig) =
         .responseTimeout(Duration.ofMinutes(5))
         .build()
 
-private fun getRequestQueue(config: ApplicationConfig) = RabbitMessageQueue(
-    config.broker.connectionName,
+private fun requestQueue(config: ApplicationConfig) = RabbitMessageQueue(
     config.codeExecutionRequestQueue.name,
+    config.broker.connectionName,
     config.codeExecutionRequestQueue.prefetchCount,
 )
 
-private fun getResponseQueue(config: ApplicationConfig) = RabbitMessageQueue(
-    config.broker.connectionName,
-    config.codeExecutionResponseQueue.name
+private fun responseQueue(config: ApplicationConfig) = RabbitMessageQueue(
+    config.codeExecutionResponseQueue.name,
+    config.broker.connectionName
 )
 
 // TODO Move configuration to file
