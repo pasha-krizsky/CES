@@ -1,58 +1,54 @@
 package com.ces.infrastructure.minio
 
-import io.kotest.core.extensions.install
+import com.ces.infrastructure.minio.MinioStorageTest.Companion.ACCESS_KEY
+import com.ces.infrastructure.minio.MinioStorageTest.Companion.MINIO_ENDPOINT
+import com.ces.infrastructure.minio.MinioStorageTest.Companion.SECRET_KEY
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.engine.spec.tempfile
-import io.kotest.extensions.testcontainers.TestContainerExtension
 import io.kotest.matchers.shouldBe
 import io.minio.MinioAsyncClient
-import org.testcontainers.containers.GenericContainer
-import org.testcontainers.containers.wait.strategy.HttpWaitStrategy
-import java.time.Duration
+import org.apache.commons.lang3.RandomStringUtils.randomAlphabetic
+import org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric
 
 class MinioStorageTest : StringSpec({
 
-    val imageName = "minio/minio"
+    extension(MinioExtension(ACCESS_KEY, SECRET_KEY))
 
-    val minioEndpoint = "http://127.0.0.1:9000"
-    val accessKey = "minioadmin"
-    val secretKey = "minioadmin"
-    val bucketName = "test-bucket"
-
+    val bucketName = randomAlphabetic(BUCKET_NAME_LENGTH).lowercase()
     val sourceFile = tempfile()
 
-    // run -p 9000:9000 -p 9001:9001 quay.io/minio/minio server /data --console-address ":9001"
-    install(TestContainerExtension(GenericContainer(imageName))) {
-        withEnv("MINIO_ACCESS_KEY", accessKey)
-        withEnv("MINIO_SECRET_KEY", secretKey)
-        portBindings = listOf("9000:9000", "9001:9001")
-        withExposedPorts(9000, 9001)
-        withCommand("server /data")
-        waitingFor(
-            HttpWaitStrategy()
-                .forPath("/minio/health/ready")
-                .forPort(9000)
-                .withStartupTimeout(Duration.ofSeconds(10))
-        )
+    val storage = MinioStorage(minioClient())
+
+    beforeSpec {
+        storage.createBucket(bucketName)
     }
 
     "should upload and download file" {
-        val objectPath = "test/${sourceFile.name}"
-        val sourceFileContent = "test content"
-        sourceFile.writeText(sourceFileContent)
+        val objectPath = sourceFile.name
+        val sourceContent = randomAlphanumeric(TEST_FILE_CONTENT_LENGTH)
+        sourceFile.writeText(sourceContent)
 
-        val minioClient: MinioAsyncClient = MinioAsyncClient.builder()
-            .endpoint(minioEndpoint)
-            .credentials(accessKey, secretKey)
-            .build()
-        val minioStorage = MinioStorage(minioClient)
-        minioStorage.createBucket(bucketName)
-        minioStorage.uploadFile(bucketName, sourceFile.absolutePath, objectPath)
-        val resultPath = sourceFile.absolutePath + "_result"
-        val resultFile = minioStorage.downloadFile(bucketName, objectPath, resultPath)
+        storage.uploadFile(bucketName, sourceFile.absolutePath, objectPath)
+        val resultPath = sourceFile.absolutePath + DOWNLOADED_SUFFIX
+        val resultFile = storage.downloadFile(bucketName, objectPath, resultPath)
 
-        resultFile.readText() shouldBe sourceFileContent
+        resultFile.readText() shouldBe sourceContent
 
         resultFile.delete()
     }
-})
+}) {
+    companion object {
+        const val ACCESS_KEY = "minioadmin"
+        const val SECRET_KEY = "minioadmin"
+        const val MINIO_ENDPOINT = "http://127.0.0.1:9000"
+        const val BUCKET_NAME_LENGTH = 10
+        const val TEST_FILE_CONTENT_LENGTH = 1000
+
+        const val DOWNLOADED_SUFFIX = "_downloaded"
+    }
+}
+
+private fun minioClient() = MinioAsyncClient.builder()
+    .endpoint(MINIO_ENDPOINT)
+    .credentials(ACCESS_KEY, SECRET_KEY)
+    .build()

@@ -7,27 +7,21 @@ import com.ces.domain.types.CodeExecutionFailureReason.INTERNAL_ERROR
 import com.ces.domain.types.CodeExecutionFailureReason.NONE
 import com.ces.domain.types.CodeExecutionState.COMPLETED
 import com.ces.domain.types.CodeExecutionState.FAILED
-import com.ces.infrastructure.docker.ContainerId
-import com.ces.infrastructure.docker.ContainerLogsResponse
-import com.ces.infrastructure.docker.CreateContainerParams
-import com.ces.infrastructure.docker.Docker
+import com.ces.infrastructure.docker.*
 import com.ces.infrastructure.minio.ObjectStorage
 import com.ces.infrastructure.rabbitmq.DeliveryId
 import com.ces.infrastructure.rabbitmq.Message
 import com.ces.infrastructure.rabbitmq.MessageQueue
 import com.ces.worker.config.ApplicationConfig
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.Clock.System.now
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry
-import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream
-import org.apache.commons.compress.utils.IOUtils
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
 import java.time.Instant.EPOCH
 
 class CodeExecutionFlow(
@@ -43,6 +37,7 @@ class CodeExecutionFlow(
             processRequest(request)
             requestQueue.markProcessed(messageId)
         } catch (e: Exception) {
+            e.printStackTrace()
             requestQueue.markUnprocessed(messageId, false)
             sendExecutionFailedEvent(request.id, INTERNAL_ERROR)
         }
@@ -52,7 +47,7 @@ class CodeExecutionFlow(
         val codeExecutionId = request.id
         val sourceCodeFile = downloadSourceCode(codeExecutionId, request.sourceCodePath)
         val containerId = createContainer(request.language, request.compiler, sourceCodeFile.name)
-        val sourceCodeTar = createTar(codeExecutionId, sourceCodeFile)
+        val sourceCodeTar = createTar(sourceCodeFile)
 
         copyCodeToContainer(containerId, sourceCodeTar)
         cleanupLocalFiles(sourceCodeFile, sourceCodeTar)
@@ -70,11 +65,12 @@ class CodeExecutionFlow(
         return Pair(message.deliveryId, request)
     }
 
-    private suspend inline fun downloadSourceCode(id: CodeExecutionId, scriptRemotePath: String): File {
-        val scriptLocalPath = filePath(config.localStoragePath, id.value.toString(), SOURCE_CODE_FILE_NAME)
-        storage.downloadFile(config.bucketName, scriptRemotePath, scriptLocalPath)
-        return File(scriptLocalPath)
-    }
+    private suspend inline fun downloadSourceCode(id: CodeExecutionId, scriptRemotePath: String) =
+        withContext(Dispatchers.IO) {
+            val localDestination = System.getProperty("java.io.tmpdir") + File.separator + id.value
+            storage.downloadFile(config.bucketName, scriptRemotePath, localDestination)
+            return@withContext File(localDestination)
+        }
 
     private suspend fun createContainer(
         language: ProgrammingLanguage,
@@ -103,8 +99,8 @@ class CodeExecutionFlow(
         }
     }
 
-    private fun createTar(id: CodeExecutionId, sourceCodeFile: File): File {
-        val sourceCodeTarPath = filePath(config.localStoragePath, id.value.toString(), SOURCE_CODE_TAR_NAME)
+    private fun createTar(sourceCodeFile: File): File {
+        val sourceCodeTarPath = sourceCodeFile.absolutePath + "_tar"
         compress(sourceCodeTarPath, sourceCodeFile)
         return File(sourceCodeTarPath)
     }
@@ -180,26 +176,3 @@ class CodeExecutionResults(
 )
 
 class CodeExecutionException(message: String) : RuntimeException(message)
-
-private fun compress(tarName: String, vararg filesToCompress: File) {
-    tarArchiveOutputStream(tarName).use { out ->
-        filesToCompress.forEach {
-            addCompressed(out, it)
-        }
-    }
-}
-
-private fun tarArchiveOutputStream(name: String): TarArchiveOutputStream {
-    val stream = TarArchiveOutputStream(FileOutputStream(name))
-    stream.setBigNumberMode(TarArchiveOutputStream.BIGNUMBER_STAR)
-    stream.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU)
-    stream.setAddPaxHeadersForNonAsciiNames(true)
-    return stream
-}
-
-private fun addCompressed(out: TarArchiveOutputStream, file: File) {
-    val entry = file.name
-    out.putArchiveEntry(TarArchiveEntry(file, entry))
-    FileInputStream(file).use { `in` -> IOUtils.copy(`in`, out) }
-    out.closeArchiveEntry()
-}
