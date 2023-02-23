@@ -1,14 +1,17 @@
 package com.ces.domain.types
 
+import com.ces.domain.json.JsonConfig
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import java.util.UUID.randomUUID
 
 class CodeExecutionIdTest : StringSpec({
+
+    val json = JsonConfig.json
+
     "should create" {
         val randomId = randomUUID()
 
@@ -27,7 +30,7 @@ class CodeExecutionIdTest : StringSpec({
     "should serialize" {
         val source = CodeExecutionId.random()
 
-        val encoded = Json.encodeToString(source)
+        val encoded = json.encodeToString(source)
 
         encoded shouldBe "\"${source.value}\""
     }
@@ -35,7 +38,7 @@ class CodeExecutionIdTest : StringSpec({
     "serialize and deserialize should be symmetrical" {
         val source = CodeExecutionId.random()
 
-        val decoded = Json.decodeFromString<CodeExecutionId>(Json.encodeToString(source))
+        val decoded = json.decodeFromString<CodeExecutionId>(json.encodeToString(source))
 
         decoded shouldBe source
     }
