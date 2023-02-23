@@ -8,7 +8,7 @@ plugins {
     id("kotlin")
     id("io.ktor.plugin") version "2.2.3"
     kotlin("plugin.serialization") version "1.8.10"
-//    id("com.github.johnrengelman.shadow") version "7.1.2"
+    id ("java-test-fixtures")
 }
 
 tasks.getByName<Test>("test") {
@@ -44,6 +44,10 @@ dependencies {
     testImplementation(testFixtures(project(":infrastructure:minio")))
     testImplementation(testFixtures(project(":infrastructure:rabbitmq")))
     testImplementation(testFixtures(project(":infrastructure:docker")))
+
+    testFixturesImplementation(testFixtures(project(":infrastructure:minio")))
+    testFixturesImplementation(testFixtures(project(":infrastructure:rabbitmq")))
+    testFixturesImplementation(testFixtures(project(":infrastructure:docker")))
 }
 
 tasks.jar {

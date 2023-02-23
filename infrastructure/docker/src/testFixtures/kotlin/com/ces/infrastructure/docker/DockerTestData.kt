@@ -7,20 +7,32 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import org.apache.commons.lang3.RandomStringUtils.randomAlphabetic
 import java.io.File
+import java.io.File.separator
 import java.net.URI
 import java.time.Duration
 
-class DockerTestFixtures {
+class DockerTestData {
 
     companion object {
-        const val TEST_IMAGE_NAME = "test-runner-image"
-
-        private val dockerHost = with(OS_NAME) {
+        val dockerHost = with(OS_NAME) {
             when {
                 contains(WINDOWS, ignoreCase = true) -> DOCKER_HOST_WINDOWS
                 else -> DOCKER_HOST_UNIX
             }
         }
+
+        const val RUNNER_TEST_IMAGE_NAME = "test-runner-image"
+        const val RUNNER_HOME_DIR = "/home/runner"
+        const val CODE_EXECUTION_TIMEOUT_MILLIS = 5_000L
+        const val LOGS_POLL_INTERVAL_MILLIS = 100L
+
+        const val RUNNER_CAP_DROP = "ALL"
+        const val RUNNER_CGROUPNS_MODE = "private"
+        const val RUNNER_NETWORK_MODE = "none"
+        const val RUNNER_CPUSET_CPUS = "1"
+        const val RUNNER_CPU_QUOTA = 10000000L
+        const val RUNNER_MEMORY = 100000000L
+        const val RUNNER_MEMORY_SWAP = 500000000L
 
         val httpDockerClient: ApacheDockerHttpClient =
             ApacheDockerHttpClient.Builder()
@@ -30,13 +42,13 @@ class DockerTestFixtures {
                 .responseTimeout(responseTimeout)
                 .build()
 
-        fun createTestImage(dockerfile: File, entrypoint: File, sourceCode: File) {
-            val tmpTarPath = "$TMP_PATH$SEPARATOR${randomAlphabetic(10)}"
-            compress(tmpTarPath, dockerfile, entrypoint, sourceCode)
+        fun createTestImage(vararg files: File) {
+            val tmpTarPath = "$TMP_PATH$separator${randomAlphabetic(10)}"
+            compress(tmpTarPath, *files)
             val tmpTarFile = File(tmpTarPath)
             val request: Request = Request.builder()
                 .method(POST)
-                .path("/build?t=$TEST_IMAGE_NAME")
+                .path("/build?t=$RUNNER_TEST_IMAGE_NAME")
                 .body(tmpTarFile.inputStream())
                 .build()
             httpDockerClient.execute(request)
@@ -78,7 +90,6 @@ private const val WINDOWS = "windows"
 
 val OS_NAME: String = System.getProperty("os.name")
 val TMP_PATH: String = System.getProperty("java.io.tmpdir")
-val SEPARATOR: String = File.separator
 
 private const val DOCKER_HOST_WINDOWS = "npipe:////./pipe/docker_engine"
 private const val DOCKER_HOST_UNIX = "unix:///var/run/docker.sock"

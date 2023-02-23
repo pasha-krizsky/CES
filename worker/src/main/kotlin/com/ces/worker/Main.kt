@@ -75,7 +75,6 @@ private fun applicationConfig() = ApplicationConfig(
         )
     ),
     bucketName = "code-execution",
-    localStoragePath = "/tmp",
     broker = MessageBrokerConfig(
         connectionName = "amqp://guest:guest@localhost:5672"
     ),

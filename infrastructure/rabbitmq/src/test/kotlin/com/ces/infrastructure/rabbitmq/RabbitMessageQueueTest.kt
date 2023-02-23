@@ -1,5 +1,6 @@
 package com.ces.infrastructure.rabbitmq
 
+import com.ces.infrastructure.rabbitmq.RabbitmqTestData.Companion.RABBIT_MQ_CONNECTION_NAME
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import org.apache.commons.lang3.RandomStringUtils.randomAlphabetic
@@ -10,7 +11,7 @@ class RabbitMessageQueueTest : StringSpec({
     extension(RabbitmqExtension())
 
     "should send and receive message" {
-        val queue = RabbitMessageQueue(randomAlphabetic(10).lowercase(), CONNECTION_NAME)
+        val queue = RabbitMessageQueue(randomAlphabetic(10).lowercase(), RABBIT_MQ_CONNECTION_NAME)
 
         val sourceMessage = Message(randomAlphanumeric(TEST_MESSAGE_CONTENT_LENGTH))
         queue.sendMessage(sourceMessage)
@@ -21,7 +22,6 @@ class RabbitMessageQueueTest : StringSpec({
     }
 }) {
     companion object {
-        private const val CONNECTION_NAME = "amqp://guest:guest@localhost:5672"
         private const val TEST_MESSAGE_CONTENT_LENGTH = 1000
     }
 }
