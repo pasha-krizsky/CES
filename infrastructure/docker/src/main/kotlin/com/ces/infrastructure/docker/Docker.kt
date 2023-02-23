@@ -90,12 +90,12 @@ data class ContainerLogsResponse(
             if (stdoutPtr == stdout.size) {
                 while (stderrPtr != stderr.size) {
                     val logChunk = stderr[stderrPtr++]
-                    builder.append(logChunk.timestamp.toString() + " " + logChunk.content)
+                    builder.append(logChunk.content)
                 }
             } else if (stderrPtr == stderr.size) {
                 while (stdoutPtr != stdout.size) {
                     val logChunk = stdout[stdoutPtr++]
-                    builder.append(logChunk.timestamp.toString() + " " + logChunk.content)
+                    builder.append(logChunk.content)
                 }
             } else {
                 val outChunk = stdout[stdoutPtr]
@@ -107,7 +107,7 @@ data class ContainerLogsResponse(
                     stdoutPtr++
                     outChunk
                 }
-                builder.append(nextChunk.timestamp.toString() + " " + nextChunk.content)
+                builder.append(nextChunk.content)
             }
         }
         return builder.toString()

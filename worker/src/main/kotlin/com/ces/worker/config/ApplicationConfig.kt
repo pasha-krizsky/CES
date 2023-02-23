@@ -8,5 +8,4 @@ class ApplicationConfig(
     val codeExecutionResponseQueue: QueueConfig,
     val minio: MinioConfig,
     val bucketName: String,
-    val localStoragePath: String,
 )

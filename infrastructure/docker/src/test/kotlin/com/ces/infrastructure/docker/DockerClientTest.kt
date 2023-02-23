@@ -1,11 +1,11 @@
 package com.ces.infrastructure.docker
 
-import com.ces.infrastructure.docker.DockerTestFixtures.Companion.TEST_IMAGE_NAME
-import com.ces.infrastructure.docker.DockerTestFixtures.Companion.containerInfo
-import com.ces.infrastructure.docker.DockerTestFixtures.Companion.createTestImage
-import com.ces.infrastructure.docker.DockerTestFixtures.Companion.httpDockerClient
-import com.ces.infrastructure.docker.DockerTestFixtures.Companion.loadResource
-import com.ces.infrastructure.docker.DockerTestFixtures.Companion.removeContainer
+import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_TEST_IMAGE_NAME
+import com.ces.infrastructure.docker.DockerTestData.Companion.containerInfo
+import com.ces.infrastructure.docker.DockerTestData.Companion.createTestImage
+import com.ces.infrastructure.docker.DockerTestData.Companion.httpDockerClient
+import com.ces.infrastructure.docker.DockerTestData.Companion.loadResource
+import com.ces.infrastructure.docker.DockerTestData.Companion.removeContainer
 import io.kotest.assertions.timing.eventually
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldNotBeEmpty
@@ -33,7 +33,7 @@ class DockerClientTest : StringSpec({
     }
 
     "should create container" {
-        val response = docker.createContainer(TEST_IMAGE_NAME, createContainerParams)
+        val response = docker.createContainer(RUNNER_TEST_IMAGE_NAME, createContainerParams)
         val containerId = response.containerId
 
         response.status shouldBe 201
@@ -44,7 +44,7 @@ class DockerClientTest : StringSpec({
     }
 
     "should start container" {
-        val containerId = docker.createContainer(TEST_IMAGE_NAME, createContainerParams).containerId
+        val containerId = docker.createContainer(RUNNER_TEST_IMAGE_NAME, createContainerParams).containerId
         val response = docker.startContainer(containerId)
 
         response.status shouldBe 204
@@ -54,7 +54,7 @@ class DockerClientTest : StringSpec({
     }
 
     "should copy file to container" {
-        val containerId = docker.createContainer(TEST_IMAGE_NAME, createContainerParams).containerId
+        val containerId = docker.createContainer(RUNNER_TEST_IMAGE_NAME, createContainerParams).containerId
         val sourceFile = loadResource("a_file.tar")
         val response = docker.copyFile(containerId, sourceFile.toPath(), "/home/runner")
 
@@ -64,7 +64,7 @@ class DockerClientTest : StringSpec({
     }
 
     "should read logs" {
-        val containerId = docker.createContainer(TEST_IMAGE_NAME, createContainerParams).containerId
+        val containerId = docker.createContainer(RUNNER_TEST_IMAGE_NAME, createContainerParams).containerId
         docker.startContainer(containerId)
 
         eventually(3.seconds) {
@@ -78,7 +78,7 @@ class DockerClientTest : StringSpec({
     }
 
     "should remove container" {
-        val containerId = docker.createContainer(TEST_IMAGE_NAME, createContainerParams).containerId
+        val containerId = docker.createContainer(RUNNER_TEST_IMAGE_NAME, createContainerParams).containerId
 
         docker.removeContainer(containerId).responseStatus shouldBe 204
         docker.removeContainer(containerId).responseStatus shouldBe 404
