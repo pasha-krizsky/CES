@@ -12,6 +12,7 @@ import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_MEMORY_SWAP
 import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_NETWORK_MODE
 import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_TEST_IMAGE_NAME
 import com.ces.infrastructure.docker.DockerTestData.Companion.dockerHost
+import com.ces.infrastructure.minio.MinioConfig
 import com.ces.infrastructure.minio.MinioTestData.Companion.MINIO_ACCESS_KEY
 import com.ces.infrastructure.minio.MinioTestData.Companion.MINIO_CODE_EXECUTION_BUCKET_NAME
 import com.ces.infrastructure.minio.MinioTestData.Companion.MINIO_ENDPOINT
@@ -21,11 +22,13 @@ import com.ces.infrastructure.rabbitmq.RabbitmqTestData.Companion.CODE_EXECUTION
 import com.ces.infrastructure.rabbitmq.RabbitmqTestData.Companion.CODE_EXECUTION_RESPONSE_QUEUE_NAME
 import com.ces.infrastructure.rabbitmq.RabbitmqTestData.Companion.CODE_EXECUTION_RESPONSE_QUEUE_PREFETCH
 import com.ces.infrastructure.rabbitmq.RabbitmqTestData.Companion.RABBIT_MQ_CONNECTION_NAME
+import com.ces.infrastructure.rabbitmq.config.QueueConfig
+import com.ces.infrastructure.rabbitmq.config.RabbitmqConfig
 
 class ApplicationConfigTestData {
 
     companion object {
-        fun applicationConfig() = ApplicationConfig(
+        fun applicationConfig() = WorkerConfig(
             docker = DockerConfig(dockerHost),
             runner = RunnerConfig(
                 imageName = RUNNER_TEST_IMAGE_NAME,
@@ -43,7 +46,7 @@ class ApplicationConfigTestData {
                 )
             ),
             bucketName = MINIO_CODE_EXECUTION_BUCKET_NAME,
-            broker = MessageBrokerConfig(
+            broker = RabbitmqConfig(
                 connectionName = RABBIT_MQ_CONNECTION_NAME
             ),
             codeExecutionRequestQueue = QueueConfig(

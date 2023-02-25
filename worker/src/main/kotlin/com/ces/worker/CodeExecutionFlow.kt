@@ -16,7 +16,7 @@ import com.ces.infrastructure.minio.ObjectStorage
 import com.ces.infrastructure.rabbitmq.DeliveryId
 import com.ces.infrastructure.rabbitmq.Message
 import com.ces.infrastructure.rabbitmq.MessageQueue
-import com.ces.worker.config.ApplicationConfig
+import com.ces.worker.config.WorkerConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -28,7 +28,7 @@ import java.time.Instant.EPOCH
 import java.util.UUID.randomUUID
 
 class CodeExecutionFlow(
-    private val config: ApplicationConfig,
+    private val config: WorkerConfig,
     private val docker: Docker,
     private val requestQueue: MessageQueue,
     private val responseQueue: MessageQueue,

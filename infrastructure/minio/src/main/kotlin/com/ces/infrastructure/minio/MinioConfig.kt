@@ -1,4 +1,4 @@
-package com.ces.worker.config
+package com.ces.infrastructure.minio
 
 class MinioConfig(
     val endpoint: String,
