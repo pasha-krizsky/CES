@@ -1,6 +1,6 @@
-package com.ces.worker.config
+package com.ces.infrastructure.rabbitmq.config
 
-class MessageBrokerConfig(
+class RabbitmqConfig(
     val connectionName: String,
 )
 

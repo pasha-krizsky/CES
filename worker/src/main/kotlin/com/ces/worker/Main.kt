@@ -1,9 +1,15 @@
 package com.ces.worker
 
 import com.ces.infrastructure.docker.DockerClient
+import com.ces.infrastructure.minio.MinioConfig
 import com.ces.infrastructure.minio.MinioStorage
 import com.ces.infrastructure.rabbitmq.RabbitMessageQueue
-import com.ces.worker.config.*
+import com.ces.infrastructure.rabbitmq.config.QueueConfig
+import com.ces.infrastructure.rabbitmq.config.RabbitmqConfig
+import com.ces.worker.config.DockerConfig
+import com.ces.worker.config.RunnerConfig
+import com.ces.worker.config.RunnerContainerConfig
+import com.ces.worker.config.WorkerConfig
 import com.github.dockerjava.core.DefaultDockerClientConfig
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient
 import io.minio.MinioAsyncClient
@@ -45,19 +51,19 @@ private fun httpDockerClient(dockerConfig: DefaultDockerClientConfig) =
         .responseTimeout(Duration.ofMinutes(5))
         .build()
 
-private fun requestQueue(config: ApplicationConfig) = RabbitMessageQueue(
+private fun requestQueue(config: WorkerConfig) = RabbitMessageQueue(
     config.codeExecutionRequestQueue.name,
     config.broker.connectionName,
     config.codeExecutionRequestQueue.prefetchCount,
 )
 
-private fun responseQueue(config: ApplicationConfig) = RabbitMessageQueue(
+private fun responseQueue(config: WorkerConfig) = RabbitMessageQueue(
     config.codeExecutionResponseQueue.name,
     config.broker.connectionName
 )
 
 // TODO Move configuration to file
-private fun applicationConfig() = ApplicationConfig(
+private fun applicationConfig() = WorkerConfig(
     docker = DockerConfig("npipe:////./pipe/docker_engine"),
     runner = RunnerConfig(
         imageName = "runner-mono",
@@ -75,7 +81,7 @@ private fun applicationConfig() = ApplicationConfig(
         )
     ),
     bucketName = "code-execution",
-    broker = MessageBrokerConfig(
+    broker = RabbitmqConfig(
         connectionName = "amqp://guest:guest@localhost:5672"
     ),
     codeExecutionRequestQueue = QueueConfig(

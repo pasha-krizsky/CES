@@ -26,6 +26,10 @@ repositories {
 
 dependencies {
     implementation(project(":domain"))
+    implementation(project(":infrastructure:rabbitmq"))
+    implementation(project(":infrastructure:minio"))
+
+    implementation("io.minio:minio:8.5.2")
 
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
 
@@ -34,6 +38,8 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-cio-jvm:$ktorVersion")
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
+    implementation("io.insert-koin:koin-ktor:3.3.0")
+    implementation("io.insert-koin:koin-logger-slf4j:3.3.0")
 
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktorVersion")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
