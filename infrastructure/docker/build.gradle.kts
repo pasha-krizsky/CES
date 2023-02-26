@@ -1,29 +1,37 @@
+val cesVersion: String by project
+
+val kotlinxCoroutinesVersion: String by project
+val kotlinxSerializationVersion: String by project
+val kotestVersion: String by project
+val kotestExtensionsVersion: String by project
+val dockerJavaClientVersion: String by project
+
 plugins {
     id("kotlin")
     id ("java-test-fixtures")
 }
 
 group = "com.ces"
-version = "0.0.1"
+version = cesVersion
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    api("com.github.docker-java:docker-java:3.2.14")
-    api("com.github.docker-java:docker-java-transport-httpclient5:3.2.14")
+    api("com.github.docker-java:docker-java:$dockerJavaClientVersion")
+    api("com.github.docker-java:docker-java-transport-httpclient5:$dockerJavaClientVersion")
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.6.4")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$kotlinxCoroutinesVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
 
-    testImplementation("io.kotest:kotest-assertions-core:5.5.5")
-    testImplementation("io.kotest:kotest-assertions-json:5.5.5")
-    testImplementation("io.kotest:kotest-runner-junit5:5.5.5")
-    testImplementation("io.kotest.extensions:kotest-extensions-testcontainers:1.3.4")
+    testImplementation("io.kotest:kotest-assertions-core:$kotestVersion")
+    testImplementation("io.kotest:kotest-assertions-json:$kotestVersion")
+    testImplementation("io.kotest:kotest-runner-junit5:$kotestVersion")
+    testImplementation("io.kotest.extensions:kotest-extensions-testcontainers:$kotestExtensionsVersion")
     
-    testFixturesImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
+    testFixturesImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
 }
 
 tasks.getByName<Test>("test") {

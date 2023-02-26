@@ -1,6 +1,10 @@
 val cesVersion: String by project
-val ktorVersion: String by project
+
 val kotlinVersion: String by project
+val ktorVersion: String by project
+val koinVersion: String by project
+val kotlinxDatetimeVersion: String by project
+val minioVersion: String by project
 val logbackVersion: String by project
 
 plugins {
@@ -29,17 +33,19 @@ dependencies {
     implementation(project(":infrastructure:rabbitmq"))
     implementation(project(":infrastructure:minio"))
 
-    implementation("io.minio:minio:8.5.2")
-
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
-
     implementation("io.ktor:ktor-server-content-negotiation-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-core-jvm:$ktorVersion")
     implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-cio-jvm:$ktorVersion")
+
+    implementation("io.insert-koin:koin-ktor:$koinVersion")
+    implementation("io.insert-koin:koin-logger-slf4j:$koinVersion")
+
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:$kotlinxDatetimeVersion")
+
+    implementation("io.minio:minio:$minioVersion")
+
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
-    implementation("io.insert-koin:koin-ktor:3.3.0")
-    implementation("io.insert-koin:koin-logger-slf4j:3.3.0")
 
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktorVersion")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")

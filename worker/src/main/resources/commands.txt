@@ -1,2 +1,0 @@
-docker build -t mono-runner .
-docker run  -v "E:\projects\CES\worker\src\main\resources\script.cs:/some/vol/script.cs" --cap-drop=ALL --security-opt=no-new-privileges --ipc=none --ulimit nofile=100 --ulimit nproc=10 mono-runner script.cs

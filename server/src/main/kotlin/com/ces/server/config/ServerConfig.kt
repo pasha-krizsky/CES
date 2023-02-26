@@ -14,21 +14,21 @@ class ServerConfig(
 ) {
     companion object {
         fun from(hocon: HoconApplicationConfig): ServerConfig {
-            val rabbitmq = RabbitmqConfig(hocon.property(RABBITMQ_CONNECTION).getString())
+            val rabbitmq = RabbitmqConfig(stringProperty(hocon, RABBITMQ_CONNECTION))
             val codeExecutionRequestQueue = QueueConfig(
-                hocon.property(CODE_EXECUTION_REQUEST_QUEUE_NAME).getString(),
-                hocon.property(CODE_EXECUTION_REQUEST_QUEUE_PREFETCH).getString().toInt(),
+                stringProperty(hocon, CODE_EXECUTION_REQUEST_QUEUE_NAME),
+                intProperty(hocon, CODE_EXECUTION_REQUEST_QUEUE_PREFETCH),
             )
             val codeExecutionResponseQueue = QueueConfig(
-                hocon.property(CODE_EXECUTION_RESPONSE_QUEUE_NAME).getString(),
-                hocon.property(CODE_EXECUTION_RESPONSE_QUEUE_PREFETCH).getString().toInt(),
+                stringProperty(hocon, CODE_EXECUTION_RESPONSE_QUEUE_NAME),
+                intProperty(hocon, CODE_EXECUTION_RESPONSE_QUEUE_PREFETCH),
             )
             val minio = MinioConfig(
-                hocon.property(MINIO_ENDPOINT).getString(),
-                hocon.property(MINIO_ACCESS_KEY).getString(),
-                hocon.property(MINIO_SECRET_KEY).getString(),
+                stringProperty(hocon, MINIO_ENDPOINT),
+                stringProperty(hocon, MINIO_ACCESS_KEY),
+                stringProperty(hocon, MINIO_SECRET_KEY),
             )
-            val codeExecutionBucketName = hocon.property(BUCKET_NAME).getString()
+            val codeExecutionBucketName = stringProperty(hocon, BUCKET_NAME)
 
             return ServerConfig(
                 rabbitmq = rabbitmq,
@@ -38,6 +38,12 @@ class ServerConfig(
                 codeExecutionBucketName = codeExecutionBucketName,
             )
         }
+
+        private fun stringProperty(hocon: HoconApplicationConfig, name: String) =
+            hocon.property(name).getString()
+
+        private fun intProperty(hocon: HoconApplicationConfig, name: String) =
+            stringProperty(hocon, name).toInt()
 
         private const val RABBITMQ_CONNECTION = "rabbitmq.connectionName"
 

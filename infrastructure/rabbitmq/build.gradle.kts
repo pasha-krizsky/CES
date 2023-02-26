@@ -1,31 +1,39 @@
+val cesVersion: String by project
+
+val kotlinxCoroutinesVersion: String by project
+val kotestVersion: String by project
+val kotestExtensionsVersion: String by project
+val apacheCommonsTextVersion: String by project
+val rabbitmqVersion: String by project
+
 plugins {
     id("kotlin")
-    id ("java-test-fixtures")
+    id("java-test-fixtures")
 }
 
 group = "com.ces"
-version = "0.0.1"
+version = cesVersion
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.6.4")
-    implementation("com.rabbitmq:amqp-client:5.16.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$kotlinxCoroutinesVersion")
+    implementation("com.rabbitmq:amqp-client:$rabbitmqVersion")
 
-    testImplementation("io.kotest:kotest-assertions-core:5.5.5")
-    testImplementation("io.kotest:kotest-assertions-json:5.5.5")
-    testImplementation("io.kotest:kotest-runner-junit5:5.5.5")
-    testImplementation("io.kotest.extensions:kotest-extensions-testcontainers:1.3.4")
-    testImplementation("org.apache.commons:commons-text:1.10.0")
+    testImplementation("io.kotest:kotest-assertions-core:$kotestVersion")
+    testImplementation("io.kotest:kotest-assertions-json:$kotestVersion")
+    testImplementation("io.kotest:kotest-runner-junit5:$kotestVersion")
+    testImplementation("io.kotest.extensions:kotest-extensions-testcontainers:$kotestExtensionsVersion")
+    testImplementation("org.apache.commons:commons-text:$apacheCommonsTextVersion")
 
-    testFixturesImplementation("io.kotest:kotest-assertions-core:5.5.5")
-    testFixturesImplementation("io.kotest:kotest-assertions-json:5.5.5")
-    testFixturesImplementation("io.kotest:kotest-runner-junit5:5.5.5")
-    testFixturesImplementation("io.kotest.extensions:kotest-extensions-testcontainers:1.3.4")
-    testFixturesImplementation("org.apache.commons:commons-text:1.10.0")
+    testFixturesImplementation("io.kotest:kotest-assertions-core:$kotestVersion")
+    testFixturesImplementation("io.kotest:kotest-assertions-json:$kotestVersion")
+    testFixturesImplementation("io.kotest:kotest-runner-junit5:$kotestVersion")
+    testFixturesImplementation("io.kotest.extensions:kotest-extensions-testcontainers:$kotestExtensionsVersion")
+    testFixturesImplementation("org.apache.commons:commons-text:$apacheCommonsTextVersion")
 }
 
 tasks.getByName<Test>("test") {

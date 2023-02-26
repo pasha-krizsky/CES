@@ -1,4 +1,8 @@
 val cesVersion: String by project
+
+val kotestVersion: String by project
+val kotestExtensionsVersion: String by project
+
 plugins {
     id("kotlin")
 }
@@ -11,9 +15,9 @@ repositories {
 }
 
 dependencies {
-    testImplementation("io.kotest:kotest-assertions-core:5.5.5")
-    testImplementation("io.kotest:kotest-runner-junit5:5.5.5")
-    testImplementation("io.kotest.extensions:kotest-extensions-testcontainers:1.3.4")
+    testImplementation("io.kotest:kotest-assertions-core:$kotestVersion")
+    testImplementation("io.kotest:kotest-runner-junit5:$kotestVersion")
+    testImplementation("io.kotest.extensions:kotest-extensions-testcontainers:$kotestExtensionsVersion")
 }
 
 tasks.getByName<Test>("test") {

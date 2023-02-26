@@ -1,14 +1,17 @@
 val cesVersion: String by project
-val kotlinVersion: String by project
-val ktorVersion: String by project
-val logbackVersion: String by project
-val junitVersion: String by project
+
+val kotlinxCoroutinesVersion: String by project
+val kotlinxSerializationVersion: String by project
+val kotlinxDatetimeVersion: String by project
+val kotestVersion: String by project
+val kotestExtensionsVersion: String by project
+val apacheCommonsCompressVersion: String by project
+val minioVersion: String by project
 
 plugins {
     id("kotlin")
-    id("io.ktor.plugin") version "2.2.3"
     kotlin("plugin.serialization") version "1.8.10"
-    id ("java-test-fixtures")
+    id("java-test-fixtures")
 }
 
 tasks.getByName<Test>("test") {
@@ -28,22 +31,22 @@ dependencies {
     implementation(project(":infrastructure:rabbitmq"))
     implementation(project(":infrastructure:minio"))
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.6.4")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$kotlinxCoroutinesVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:$kotlinxDatetimeVersion")
 
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
-    implementation("org.apache.commons:commons-compress:1.22")
-    implementation("io.minio:minio:8.5.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
-
-    testImplementation("io.kotest:kotest-assertions-core:5.5.5")
-    testImplementation("io.kotest:kotest-assertions-json:5.5.5")
-    testImplementation("io.kotest:kotest-runner-junit5:5.5.5")
-    testImplementation("io.kotest.extensions:kotest-extensions-testcontainers:1.3.4")
+    implementation("org.apache.commons:commons-compress:$apacheCommonsCompressVersion")
+    implementation("io.minio:minio:$minioVersion")
 
     testImplementation(testFixtures(project(":infrastructure:minio")))
     testImplementation(testFixtures(project(":infrastructure:rabbitmq")))
     testImplementation(testFixtures(project(":infrastructure:docker")))
+
+    testImplementation("io.kotest:kotest-assertions-core:$kotestVersion")
+    testImplementation("io.kotest:kotest-assertions-json:$kotestVersion")
+    testImplementation("io.kotest:kotest-runner-junit5:$kotestVersion")
+    testImplementation("io.kotest.extensions:kotest-extensions-testcontainers:$kotestExtensionsVersion")
 
     testFixturesImplementation(testFixtures(project(":infrastructure:minio")))
     testFixturesImplementation(testFixtures(project(":infrastructure:rabbitmq")))
