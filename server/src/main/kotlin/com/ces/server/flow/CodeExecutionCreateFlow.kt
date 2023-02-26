@@ -10,14 +10,14 @@ import com.ces.infrastructure.rabbitmq.Message
 import com.ces.infrastructure.rabbitmq.MessageQueue
 import com.ces.server.config.ServerConfig
 import com.ces.server.models.CodeExecutionRequest
-import com.ces.server.storage.CodeExecutionStorage
+import com.ces.server.storage.CodeExecutionDao
 import kotlinx.datetime.Clock.System.now
 import java.io.File
 import java.io.File.separator
 
 class CodeExecutionCreateFlow(
     private val config: ServerConfig,
-    private val database: CodeExecutionStorage,
+    private val database: CodeExecutionDao,
     private val storage: ObjectStorage,
     private val requestQueue: MessageQueue,
 ) {
@@ -46,7 +46,7 @@ class CodeExecutionCreateFlow(
             request.compiler,
         )
 
-        database.store(codeExecution)
+        database.upsert(codeExecution)
         return codeExecution
     }
 

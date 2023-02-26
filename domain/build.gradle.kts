@@ -1,3 +1,13 @@
+val cesVersion: String by project
+
+val kotlinxCoroutinesVersion: String by project
+val kotlinxSerializationVersion: String by project
+val kotlinxDatetimeVersion: String by project
+val kotestVersion: String by project
+val kotestExtensionsVersion: String by project
+val apacheCommonsTextVersion: String by project
+val minioVersion: String by project
+
 plugins {
     id("kotlin")
     kotlin("plugin.serialization") version "1.8.10"
@@ -5,24 +15,24 @@ plugins {
 }
 
 group = "com.ces"
-version = "0.0.1"
+version = cesVersion
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:$kotlinxDatetimeVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
 
-    testImplementation("io.kotest:kotest-assertions-core:5.5.5")
-    testImplementation("io.kotest:kotest-assertions-json:5.5.5")
-    testImplementation("io.kotest:kotest-runner-junit5:5.5.5")
-    testImplementation("org.apache.commons:commons-text:1.10.0")
+    testImplementation("io.kotest:kotest-assertions-core:$kotestVersion")
+    testImplementation("io.kotest:kotest-assertions-json:$kotestVersion")
+    testImplementation("io.kotest:kotest-runner-junit5:$kotestVersion")
+    testImplementation("org.apache.commons:commons-text:$apacheCommonsTextVersion")
 
-    testFixturesImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
-    testFixturesImplementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
-    testFixturesImplementation("org.apache.commons:commons-text:1.10.0")
+    testFixturesImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
+    testFixturesImplementation("org.jetbrains.kotlinx:kotlinx-datetime:$kotlinxDatetimeVersion")
+    testFixturesImplementation("org.apache.commons:commons-text:$apacheCommonsTextVersion")
 }
 
 tasks.getByName<Test>("test") {
