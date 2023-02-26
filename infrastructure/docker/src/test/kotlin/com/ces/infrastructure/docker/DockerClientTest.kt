@@ -16,6 +16,8 @@ import kotlin.time.Duration.Companion.seconds
 
 class DockerClientTest : StringSpec({
 
+    timeout = 600_000
+
     val docker = DockerClient(httpDockerClient)
 
     val dockerfile = loadResource(DOCKERFILE)

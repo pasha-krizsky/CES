@@ -6,5 +6,5 @@ if [ $# -eq 0 ]
     exit 0
 fi
 
-mcs -out:executable.exe /home/newuser/"$@"
+mcs -out:executable.exe /home/runner/"$@"
 mono executable.exe

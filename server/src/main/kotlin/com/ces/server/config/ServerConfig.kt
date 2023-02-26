@@ -13,22 +13,27 @@ class ServerConfig(
     val codeExecutionBucketName: String,
 ) {
     companion object {
-        fun from(hocon: HoconApplicationConfig): ServerConfig {
-            val rabbitmq = RabbitmqConfig(stringProperty(hocon, RABBITMQ_CONNECTION))
+        fun from(config: HoconApplicationConfig): ServerConfig {
+            val rabbitmq = RabbitmqConfig(
+                user = stringProperty(config, RABBITMQ_USER),
+                password = stringProperty(config, RABBITMQ_PASSWORD),
+                host = stringProperty(config, RABBITMQ_HOST),
+                port = intProperty(config, RABBITMQ_PORT),
+            )
             val codeExecutionRequestQueue = QueueConfig(
-                stringProperty(hocon, CODE_EXECUTION_REQUEST_QUEUE_NAME),
-                intProperty(hocon, CODE_EXECUTION_REQUEST_QUEUE_PREFETCH),
+                stringProperty(config, CODE_EXECUTION_REQUEST_QUEUE_NAME),
+                intProperty(config, CODE_EXECUTION_REQUEST_QUEUE_PREFETCH),
             )
             val codeExecutionResponseQueue = QueueConfig(
-                stringProperty(hocon, CODE_EXECUTION_RESPONSE_QUEUE_NAME),
-                intProperty(hocon, CODE_EXECUTION_RESPONSE_QUEUE_PREFETCH),
+                stringProperty(config, CODE_EXECUTION_RESPONSE_QUEUE_NAME),
+                intProperty(config, CODE_EXECUTION_RESPONSE_QUEUE_PREFETCH),
             )
             val minio = MinioConfig(
-                stringProperty(hocon, MINIO_ENDPOINT),
-                stringProperty(hocon, MINIO_ACCESS_KEY),
-                stringProperty(hocon, MINIO_SECRET_KEY),
+                stringProperty(config, MINIO_ENDPOINT),
+                stringProperty(config, MINIO_ACCESS_KEY),
+                stringProperty(config, MINIO_SECRET_KEY),
             )
-            val codeExecutionBucketName = stringProperty(hocon, BUCKET_NAME)
+            val codeExecutionBucketName = stringProperty(config, BUCKET_NAME)
 
             return ServerConfig(
                 rabbitmq = rabbitmq,
@@ -45,7 +50,10 @@ class ServerConfig(
         private fun intProperty(hocon: HoconApplicationConfig, name: String) =
             stringProperty(hocon, name).toInt()
 
-        private const val RABBITMQ_CONNECTION = "rabbitmq.connectionName"
+        private const val RABBITMQ_USER = "rabbitmq.user"
+        private const val RABBITMQ_PASSWORD = "rabbitmq.password"
+        private const val RABBITMQ_HOST = "rabbitmq.host"
+        private const val RABBITMQ_PORT = "rabbitmq.port"
 
         private const val CODE_EXECUTION_REQUEST_QUEUE_NAME = "codeExecutionRequestQueue.name"
         private const val CODE_EXECUTION_REQUEST_QUEUE_PREFETCH = "codeExecutionRequestQueue.prefetchCount"

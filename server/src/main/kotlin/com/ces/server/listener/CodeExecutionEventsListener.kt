@@ -57,6 +57,7 @@ class CodeExecutionEventsListener(
             state = event.state
             exitCode = event.exitCode
             failureReason = event.failureReason
+            finishedAt = event.createdAt
         }.build()
         database.upsert(updated)
     }

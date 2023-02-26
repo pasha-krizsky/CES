@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+  rabbit:
+    build: rabbitmq/
+    hostname: 'rabbit'
+    container_name: 'rabbit'
+    expose:
+      - 5672
+      - 15672
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:15672"]
+      interval: '10s'
+      timeout: '10s'
+      retries: 5
+    restart: on-failure
+  minio:
+    image: quay.io/minio/minio
+    container_name: minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    depends_on:
+      rabbit:
+        condition: service_healthy
+    restart: on-failure
+  ces-server:
+    build: server/
+    container_name: ces-server
+    ports:
+      - "8080:8080"
+    depends_on:
+      - minio
+    restart: on-failure
+  ces-worker:
+    build: worker/
+    container_name: ces-worker
+    volumes:
+      - //var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - ces-server
+    restart: on-failure

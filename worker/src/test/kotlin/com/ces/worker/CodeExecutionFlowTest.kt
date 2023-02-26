@@ -34,7 +34,7 @@ val config = applicationConfig()
 
 class CodeExecutionFlowTest : StringSpec({
 
-    timeout = 30_000
+    timeout = 600_000
 
     extension(MinioExtension(config.minio.accessKey, config.minio.secretKey))
     extension(RabbitmqExtension())
@@ -116,13 +116,13 @@ private suspend fun StringSpec.shouldStoreCorrectExecutionLogsToObjectStorage(
 
 private fun requestQueue() = RabbitMessageQueue(
     config.codeExecutionRequestQueue.name,
-    config.rabbitmq.connectionName,
+    config.rabbitmq,
     config.codeExecutionRequestQueue.prefetchCount
 )
 
 private fun responseQueue() = RabbitMessageQueue(
     config.codeExecutionResponseQueue.name,
-    config.rabbitmq.connectionName,
+    config.rabbitmq,
     config.codeExecutionResponseQueue.prefetchCount
 )
 

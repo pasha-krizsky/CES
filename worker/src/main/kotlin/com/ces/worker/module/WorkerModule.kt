@@ -51,7 +51,7 @@ val workerModule = module {
     single {
         RabbitMessageQueue(
             workerConfig.codeExecutionRequestQueue.name,
-            workerConfig.rabbitmq.connectionName,
+            workerConfig.rabbitmq,
             workerConfig.codeExecutionRequestQueue.prefetchCount,
         )
     } withOptions {
@@ -61,7 +61,7 @@ val workerModule = module {
     single {
         RabbitMessageQueue(
             workerConfig.codeExecutionResponseQueue.name,
-            workerConfig.rabbitmq.connectionName,
+            workerConfig.rabbitmq,
             workerConfig.codeExecutionResponseQueue.prefetchCount,
         )
     } withOptions {
