@@ -53,7 +53,7 @@ class CodeExecutionFlowTest : StringSpec({
         responseQueue = responseQueue()
         minioStorage = minioStorage()
 
-        minioStorage.createBucket(config.bucketName)
+        minioStorage.createBucket(config.codeExecutionBucketName)
 
         createTestImage(runnerDockerfile, runnerEntrypoint,)
 
@@ -67,7 +67,7 @@ class CodeExecutionFlowTest : StringSpec({
         ).forAll { (scriptName, expectedLogs) ->
             val codeExecutionId = CodeExecutionId.random()
             val storagePath = codeExecutionId.value.toString()
-            minioStorage.uploadFile(config.bucketName, loadResource(scriptName).absolutePath, storagePath)
+            minioStorage.uploadFile(config.codeExecutionBucketName, loadResource(scriptName).absolutePath, storagePath)
 
             val request = CodeExecutionRequestedEvent(codeExecutionId, now(), C_SHARP, MONO, storagePath)
             requestQueue.sendMessage(Message(encodeCodeExecutionEvent(request)))
@@ -107,7 +107,7 @@ private suspend fun StringSpec.shouldStoreCorrectExecutionLogsToObjectStorage(
 ) {
     val resultPath = tempdir().absolutePath + DOWNLOADED_SUFFIX
     val logs =
-        minioStorage.downloadFile(config.bucketName, startedEvent.executionLogsPath, resultPath)
+        minioStorage.downloadFile(config.codeExecutionBucketName, startedEvent.executionLogsPath, resultPath)
     logs.readText() shouldBe expectedLogs
 
     logs.delete()
@@ -115,13 +115,13 @@ private suspend fun StringSpec.shouldStoreCorrectExecutionLogsToObjectStorage(
 
 private fun requestQueue() = RabbitMessageQueue(
     config.codeExecutionRequestQueue.name,
-    config.broker.connectionName,
+    config.rabbitmq.connectionName,
     config.codeExecutionRequestQueue.prefetchCount
 )
 
 private fun responseQueue() = RabbitMessageQueue(
     config.codeExecutionResponseQueue.name,
-    config.broker.connectionName,
+    config.rabbitmq.connectionName,
     config.codeExecutionResponseQueue.prefetchCount
 )
 

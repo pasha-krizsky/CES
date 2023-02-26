@@ -45,8 +45,8 @@ class ApplicationConfigTestData {
                     memorySwap = RUNNER_MEMORY_SWAP,
                 )
             ),
-            bucketName = MINIO_CODE_EXECUTION_BUCKET_NAME,
-            broker = RabbitmqConfig(
+            codeExecutionBucketName = MINIO_CODE_EXECUTION_BUCKET_NAME,
+            rabbitmq = RabbitmqConfig(
                 connectionName = RABBIT_MQ_CONNECTION_NAME
             ),
             codeExecutionRequestQueue = QueueConfig(

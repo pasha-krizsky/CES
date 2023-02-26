@@ -7,6 +7,7 @@ val kotestVersion: String by project
 val kotestExtensionsVersion: String by project
 val apacheCommonsCompressVersion: String by project
 val minioVersion: String by project
+val typesafeConfigVersion: String by project
 
 plugins {
     id("kotlin")
@@ -38,6 +39,8 @@ dependencies {
 
     implementation("org.apache.commons:commons-compress:$apacheCommonsCompressVersion")
     implementation("io.minio:minio:$minioVersion")
+
+    implementation("com.typesafe:config:$typesafeConfigVersion")
 
     testImplementation(testFixtures(project(":infrastructure:minio")))
     testImplementation(testFixtures(project(":infrastructure:rabbitmq")))

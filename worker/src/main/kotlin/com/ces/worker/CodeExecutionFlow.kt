@@ -83,7 +83,7 @@ class CodeExecutionFlow(
     private suspend inline fun downloadSourceCode(id: CodeExecutionId, scriptRemotePath: String) =
         withContext(Dispatchers.IO) {
             val localDestination = WORKER_TMP_DIR + separator + id.value
-            storage.downloadFile(config.bucketName, scriptRemotePath, localDestination)
+            storage.downloadFile(config.codeExecutionBucketName, scriptRemotePath, localDestination)
             return@withContext File(localDestination)
         }
 
@@ -163,12 +163,12 @@ class CodeExecutionFlow(
 
             val tmpLocalDestination = WORKER_TMP_DIR + separator + randomUUID()
             val file = if (!firstChunk)
-                storage.downloadFile(config.bucketName, resultsPath, tmpLocalDestination)
+                storage.downloadFile(config.codeExecutionBucketName, resultsPath, tmpLocalDestination)
             else File(tmpLocalDestination)
             val textLogs = logs.mergeToString()
             file.appendText(textLogs)
 
-            storage.uploadFile(config.bucketName, tmpLocalDestination, resultsPath)
+            storage.uploadFile(config.codeExecutionBucketName, tmpLocalDestination, resultsPath)
             file.delete()
         }
 
