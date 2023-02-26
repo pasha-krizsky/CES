@@ -6,8 +6,9 @@ import com.ces.infrastructure.rabbitmq.MessageQueue
 import com.ces.infrastructure.rabbitmq.RabbitMessageQueue
 import com.ces.server.config.ServerConfig
 import com.ces.server.flow.CodeExecutionCreateFlow
-import com.ces.server.storage.CodeExecutionInMemoryDao
+import com.ces.server.listener.CodeExecutionEventsListener
 import com.ces.server.storage.CodeExecutionDao
+import com.ces.server.storage.CodeExecutionInMemoryDao
 import com.typesafe.config.ConfigFactory
 import io.ktor.server.config.*
 import io.minio.MinioAsyncClient
@@ -62,6 +63,10 @@ val serverModule = module {
             get(),
             get(named(REQUEST_QUEUE_QUALIFIER))
         )
+    }
+
+    single {
+        CodeExecutionEventsListener(get(named(RESPONSE_QUEUE_QUALIFIER)), get())
     }
 }
 
