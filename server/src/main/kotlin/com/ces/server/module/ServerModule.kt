@@ -20,7 +20,7 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 
 // TODO Consider splitting this module into submodules as application grows
-val appModule = module {
+val serverModule = module {
     val serverConfig = ServerConfig.from(HoconApplicationConfig(ConfigFactory.load()))
     single { serverConfig }
 

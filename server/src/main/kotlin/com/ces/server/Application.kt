@@ -2,7 +2,7 @@ package com.ces.server
 
 import com.ces.infrastructure.minio.ObjectStorage
 import com.ces.server.config.ServerConfig
-import com.ces.server.module.appModule
+import com.ces.server.module.serverModule
 import com.ces.server.plugins.configureRouting
 import com.ces.server.plugins.configureSerialization
 import io.ktor.serialization.kotlinx.json.*
@@ -22,7 +22,7 @@ fun main(args: Array<String>): Unit =
 fun Application.module() = runBlocking {
     install(Koin) {
         slf4jLogger()
-        modules(appModule)
+        modules(serverModule)
     }
 
     val storage by inject<ObjectStorage>()

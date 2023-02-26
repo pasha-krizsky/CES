@@ -3,6 +3,7 @@ val cesVersion: String by project
 val kotlinxCoroutinesVersion: String by project
 val kotlinxSerializationVersion: String by project
 val kotlinxDatetimeVersion: String by project
+val koinVersion: String by project
 val kotestVersion: String by project
 val kotestExtensionsVersion: String by project
 val apacheCommonsCompressVersion: String by project
@@ -36,6 +37,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$kotlinxCoroutinesVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:$kotlinxDatetimeVersion")
+
+    implementation("io.insert-koin:koin-core-jvm:$koinVersion")
 
     implementation("org.apache.commons:commons-compress:$apacheCommonsCompressVersion")
     implementation("io.minio:minio:$minioVersion")
