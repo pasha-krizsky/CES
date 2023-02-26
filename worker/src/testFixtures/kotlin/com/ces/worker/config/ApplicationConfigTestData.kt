@@ -1,5 +1,6 @@
 package com.ces.worker.config
 
+import com.ces.infrastructure.docker.DockerConfig
 import com.ces.infrastructure.docker.DockerTestData.Companion.CODE_EXECUTION_TIMEOUT_MILLIS
 import com.ces.infrastructure.docker.DockerTestData.Companion.LOGS_POLL_INTERVAL_MILLIS
 import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_CAP_DROP

@@ -1,4 +1,4 @@
-package com.ces.worker
+package com.ces.worker.flow
 
 import com.ces.domain.events.CodeExecutionFinishedEvent
 import com.ces.domain.events.CodeExecutionRequestedEvent

@@ -1,5 +1,6 @@
 package com.ces.worker.config
 
+import com.ces.infrastructure.docker.DockerConfig
 import com.ces.infrastructure.minio.MinioConfig
 import com.ces.infrastructure.rabbitmq.config.QueueConfig
 import com.ces.infrastructure.rabbitmq.config.RabbitmqConfig

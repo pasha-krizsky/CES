@@ -1,4 +1,4 @@
-package com.ces.worker.config
+package com.ces.infrastructure.docker
 
 class DockerConfig(
     val socket: String,
