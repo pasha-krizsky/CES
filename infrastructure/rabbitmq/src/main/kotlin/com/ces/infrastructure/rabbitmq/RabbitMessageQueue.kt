@@ -1,9 +1,11 @@
 package com.ces.infrastructure.rabbitmq
 
+import com.ces.infrastructure.rabbitmq.config.RabbitmqConfig
 import com.rabbitmq.client.CancelCallback
 import com.rabbitmq.client.Connection
 import com.rabbitmq.client.ConnectionFactory
 import com.rabbitmq.client.DeliverCallback
+import com.rabbitmq.client.impl.DefaultCredentialsProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -13,7 +15,7 @@ import kotlinx.coroutines.channels.Channel as CoroutineChannel
 
 class RabbitMessageQueue(
     private val queueName: String,
-    connectionName: String,
+    config: RabbitmqConfig,
     prefetchCount: Int = 1,
 ) : MessageQueue {
 
@@ -28,7 +30,10 @@ class RabbitMessageQueue(
 
     init {
         val connectionFactory = ConnectionFactory()
-        rabbitConnection = connectionFactory.newConnection(connectionName)
+        connectionFactory.setCredentialsProvider(DefaultCredentialsProvider(config.user, config.password))
+        connectionFactory.host = config.host
+        connectionFactory.port = config.port
+        rabbitConnection = connectionFactory.newConnection()
         rabbitChannel = rabbitConnection.createChannel()
         deliveryHandler = DeliverCallback { _, delivery ->
             runBlocking {

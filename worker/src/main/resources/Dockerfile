@@ -4,9 +4,9 @@ RUN apt-get update \
   && apt-get install -y binutils curl mono-devel ca-certificates-mono fsharp mono-vbnc nuget referenceassemblies-pcl \
   && rm -rf /var/lib/apt/lists/* /tmp/*
 
-RUN useradd -ms /bin/bash newuser
-WORKDIR /home/newuser
-COPY ./file.sh /home/newuser
+RUN useradd -ms /bin/bash runner
+WORKDIR /home/runner
+COPY ./file.sh /home/runner
 
-USER newuser
-ENTRYPOINT ["/home/newuser/file.sh"]
+USER runner
+ENTRYPOINT ["/home/runner/file.sh"]

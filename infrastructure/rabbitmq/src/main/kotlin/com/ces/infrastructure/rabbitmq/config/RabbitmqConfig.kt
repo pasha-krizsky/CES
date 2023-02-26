@@ -1,7 +1,10 @@
 package com.ces.infrastructure.rabbitmq.config
 
 class RabbitmqConfig(
-    val connectionName: String,
+    val user: String,
+    val password: String,
+    val host: String,
+    val port: Int,
 )
 
 class QueueConfig(

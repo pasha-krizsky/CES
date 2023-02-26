@@ -36,7 +36,7 @@ val serverModule = module {
     single {
         RabbitMessageQueue(
             serverConfig.codeExecutionRequestQueue.name,
-            serverConfig.rabbitmq.connectionName,
+            serverConfig.rabbitmq,
             serverConfig.codeExecutionRequestQueue.prefetchCount,
         )
     } withOptions {
@@ -46,7 +46,7 @@ val serverModule = module {
     single {
         RabbitMessageQueue(
             serverConfig.codeExecutionResponseQueue.name,
-            serverConfig.rabbitmq.connectionName,
+            serverConfig.rabbitmq,
             serverConfig.codeExecutionResponseQueue.prefetchCount,
         )
     } withOptions {

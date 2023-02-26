@@ -22,7 +22,10 @@ import com.ces.infrastructure.rabbitmq.RabbitmqTestData.Companion.CODE_EXECUTION
 import com.ces.infrastructure.rabbitmq.RabbitmqTestData.Companion.CODE_EXECUTION_REQUEST_QUEUE_PREFETCH
 import com.ces.infrastructure.rabbitmq.RabbitmqTestData.Companion.CODE_EXECUTION_RESPONSE_QUEUE_NAME
 import com.ces.infrastructure.rabbitmq.RabbitmqTestData.Companion.CODE_EXECUTION_RESPONSE_QUEUE_PREFETCH
-import com.ces.infrastructure.rabbitmq.RabbitmqTestData.Companion.RABBIT_MQ_CONNECTION_NAME
+import com.ces.infrastructure.rabbitmq.RabbitmqTestData.Companion.RABBIT_MQ_HOST
+import com.ces.infrastructure.rabbitmq.RabbitmqTestData.Companion.RABBIT_MQ_PASSWORD
+import com.ces.infrastructure.rabbitmq.RabbitmqTestData.Companion.RABBIT_MQ_PORT
+import com.ces.infrastructure.rabbitmq.RabbitmqTestData.Companion.RABBIT_MQ_USER
 import com.ces.infrastructure.rabbitmq.config.QueueConfig
 import com.ces.infrastructure.rabbitmq.config.RabbitmqConfig
 
@@ -48,7 +51,10 @@ class ApplicationConfigTestData {
             ),
             codeExecutionBucketName = MINIO_CODE_EXECUTION_BUCKET_NAME,
             rabbitmq = RabbitmqConfig(
-                connectionName = RABBIT_MQ_CONNECTION_NAME
+                user = RABBIT_MQ_USER,
+                password = RABBIT_MQ_PASSWORD,
+                host = RABBIT_MQ_HOST,
+                port = RABBIT_MQ_PORT,
             ),
             codeExecutionRequestQueue = QueueConfig(
                 name = CODE_EXECUTION_REQUEST_QUEUE_NAME,

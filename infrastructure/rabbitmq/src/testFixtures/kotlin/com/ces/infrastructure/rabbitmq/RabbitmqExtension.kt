@@ -20,7 +20,7 @@ class RabbitmqExtension : BeforeSpecListener, AfterSpecListener {
     }
 
     companion object {
-        private const val IMAGE = "rabbitmq:3-management"
+        private const val IMAGE = "rabbitmq:3-management-alpine"
 
         private const val BROKER_PORT = 5672
         private const val WEB_PORT = 15672

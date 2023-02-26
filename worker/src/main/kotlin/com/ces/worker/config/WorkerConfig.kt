@@ -35,7 +35,12 @@ class WorkerConfig(
                 )
             )
             val codeExecutionBucketName = stringProperty(config, BUCKET_NAME)
-            val rabbitmq = RabbitmqConfig(stringProperty(config, RABBITMQ_CONNECTION))
+            val rabbitmq = RabbitmqConfig(
+                user = stringProperty(config, RABBITMQ_USER),
+                password = stringProperty(config, RABBITMQ_PASSWORD),
+                host = stringProperty(config, RABBITMQ_HOST),
+                port = intProperty(config, RABBITMQ_PORT),
+            )
             val codeExecutionRequestQueue = QueueConfig(
                 stringProperty(config, CODE_EXECUTION_REQUEST_QUEUE_NAME),
                 intProperty(config, CODE_EXECUTION_REQUEST_QUEUE_PREFETCH),
@@ -82,7 +87,10 @@ class WorkerConfig(
 
         private const val BUCKET_NAME = "codeExecutionBucketName"
 
-        private const val RABBITMQ_CONNECTION = "rabbitmq.connectionName"
+        private const val RABBITMQ_USER = "rabbitmq.user"
+        private const val RABBITMQ_PASSWORD = "rabbitmq.password"
+        private const val RABBITMQ_HOST = "rabbitmq.host"
+        private const val RABBITMQ_PORT = "rabbitmq.port"
 
         private const val CODE_EXECUTION_REQUEST_QUEUE_NAME = "codeExecutionRequestQueue.name"
         private const val CODE_EXECUTION_REQUEST_QUEUE_PREFETCH = "codeExecutionRequestQueue.prefetchCount"
