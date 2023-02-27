@@ -22,6 +22,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.Clock.System.now
+import mu.KotlinLogging
 import java.io.File
 import java.io.File.separator
 import java.time.Instant.EPOCH
@@ -34,13 +35,18 @@ class CodeExecutionFlow(
     private val responseQueue: MessageQueue,
     private val storage: ObjectStorage,
 ) {
+
+    private val log = KotlinLogging.logger {}
+
     suspend fun run() {
         val (messageId, request) = fetchCodeExecutionRequest()
+        log.debug { "Start processing code execution request, messageId=$$messageId" }
         try {
             processRequest(request)
             requestQueue.markProcessed(messageId)
+            log.debug { "Finished processing code execution request, messageId=$messageId" }
         } catch (e: Exception) {
-            e.printStackTrace()
+            log.error(e) { "Failed to process code execution request" }
             requestQueue.markUnprocessed(messageId, false)
             sendExecutionFailedEvent(request.id, INTERNAL_ERROR)
         }
@@ -66,7 +72,7 @@ class CodeExecutionFlow(
     }
 
     private suspend fun sendExecutionStartedEvent(codeExecutionId: CodeExecutionId, resultsPath: String) {
-        val startedEvent = CodeExecutionStartedEvent.builder {
+        val startedEvent: CodeExecutionStartedEvent = CodeExecutionStartedEvent.builder {
             id = codeExecutionId
             createdAt = now()
             executionLogsPath = resultsPath
@@ -80,14 +86,14 @@ class CodeExecutionFlow(
         return Pair(message.deliveryId, request)
     }
 
-    private suspend inline fun downloadSourceCode(id: CodeExecutionId, scriptRemotePath: String) =
-        withContext(Dispatchers.IO) {
-            val localDestination = WORKER_TMP_DIR + separator + id.value
-            storage.downloadFile(config.codeExecutionBucketName, scriptRemotePath, localDestination)
-            return@withContext File(localDestination)
-        }
+    private suspend inline fun downloadSourceCode(id: CodeExecutionId, scriptRemotePath: String): File {
+        val localDestination = WORKER_TMP_DIR + separator + id.value
+        storage.downloadFile(config.codeExecutionBucketName, scriptRemotePath, localDestination)
+        return File(localDestination)
+    }
 
     private suspend fun createContainer(scriptName: String): ContainerId {
+        log.debug { "Creating container for code execution" }
         val response = docker.createContainer(config.runner.imageName, createContainerParams(scriptName))
         if (response.isSuccessful())
             return response.containerId
@@ -122,6 +128,7 @@ class CodeExecutionFlow(
     }
 
     private suspend fun startContainer(containerId: ContainerId) {
+        log.debug { "Starting container for code execution" }
         val response = docker.startContainer(containerId)
         if (!response.isSuccessful())
             throw CodeExecutionException("Failed to start container, got ${response.status} response status")

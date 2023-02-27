@@ -9,6 +9,7 @@ import com.rabbitmq.client.impl.DefaultCredentialsProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import mu.KotlinLogging
 import java.nio.charset.StandardCharsets.UTF_8
 import com.rabbitmq.client.Channel as RabbitChannel
 import kotlinx.coroutines.channels.Channel as CoroutineChannel
@@ -18,6 +19,8 @@ class RabbitMessageQueue(
     config: RabbitmqConfig,
     prefetchCount: Int = 1,
 ) : MessageQueue {
+
+    private val log = KotlinLogging.logger {}
 
     private val deliveryChannel = CoroutineChannel<ReceivedMessage>(capacity = prefetchCount)
 
@@ -39,6 +42,7 @@ class RabbitMessageQueue(
             runBlocking {
                 val messageId = delivery.envelope.deliveryTag.toString()
                 val messageContent = String(delivery.body, UTF_8)
+                log.debug { "Received a message, messageId=$messageId, content=$messageContent" }
                 val message = ReceivedMessage(messageId, messageContent)
                 deliveryChannel.send(message)
             }
@@ -51,6 +55,7 @@ class RabbitMessageQueue(
     }
 
     override suspend fun sendMessage(message: Message) = withContext(Dispatchers.IO) {
+        log.debug { "Sending a message, content=${message.content}" }
         rabbitChannel.basicPublish(EXCHANGE_NAME, queueName, null, message.content.toByteArray(UTF_8))
     }
 
@@ -59,10 +64,12 @@ class RabbitMessageQueue(
     }
 
     override suspend fun markProcessed(id: DeliveryId) {
+        log.debug { "Marking message as processed, messageId=$id" }
         rabbitChannel.basicAck(id.toLong(), false)
     }
 
     override suspend fun markUnprocessed(id: DeliveryId, requeue: Boolean) {
+        log.debug { "Marking message as unprocessed, messageId=$id" }
         rabbitChannel.basicNack(id.toLong(), false, requeue)
     }
 

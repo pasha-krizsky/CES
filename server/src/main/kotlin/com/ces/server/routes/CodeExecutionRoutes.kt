@@ -5,6 +5,7 @@ import com.ces.server.flow.CodeExecutionCreateFlow
 import com.ces.server.models.CodeExecutionRequest
 import com.ces.server.models.CodeExecutionView
 import com.ces.server.storage.CodeExecutionDao
+import io.ktor.http.HttpStatusCode.Companion.Accepted
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
 import io.ktor.server.application.*
 import io.ktor.server.request.*
@@ -34,7 +35,7 @@ fun Route.codeExecutionRouting() {
         post {
             val request = call.receive<CodeExecutionRequest>()
             val codeExecution = codeExecutionCreateFlow.run(request)
-            call.respond(CodeExecutionCreatedResponse(codeExecution.id))
+            call.respond(status = Accepted, CodeExecutionCreatedResponse(codeExecution.id))
         }
     }
 }
