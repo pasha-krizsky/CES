@@ -6,7 +6,7 @@ RUN apt-get update \
 
 RUN useradd -ms /bin/bash runner
 WORKDIR /home/runner
-COPY ./file.sh /home/runner
+COPY entrypoint.sh /home/runner
 
 USER runner
-ENTRYPOINT ["/home/runner/file.sh"]
+ENTRYPOINT ["/home/runner/entrypoint.sh"]

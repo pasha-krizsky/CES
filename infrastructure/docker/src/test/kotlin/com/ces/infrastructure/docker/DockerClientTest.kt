@@ -8,10 +8,12 @@ import com.ces.infrastructure.docker.DockerTestData.Companion.loadResource
 import com.ces.infrastructure.docker.DockerTestData.Companion.removeContainer
 import io.kotest.assertions.timing.eventually
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotBeEmpty
 import java.time.Instant.EPOCH
+import java.util.UUID.randomUUID
 import kotlin.time.Duration.Companion.seconds
 
 class DockerClientTest : StringSpec({
@@ -32,6 +34,15 @@ class DockerClientTest : StringSpec({
         val response = docker.ping()
 
         response shouldBe PingResponse(200, "OK")
+    }
+
+    "should build and remove image" {
+        val imageName = RUNNER_TEST_IMAGE_NAME + "_${randomUUID()}"
+        val response = docker.buildImage(imageName, dockerfile, entrypoint, sourceCode)
+
+        response.status shouldBe 200
+        docker.removeImage(imageName).status shouldBe 200
+        docker.removeImage(imageName).status shouldBe 404
     }
 
     "should create container" {
@@ -71,9 +82,11 @@ class DockerClientTest : StringSpec({
 
         eventually(3.seconds) {
             val logs = docker.containerLogs(containerId, EPOCH)
-            logs.responseStatus shouldBe 200
+            logs.status shouldBe 200
+            logs.stderr.shouldBeEmpty()
             logs.stdout.shouldNotBeEmpty()
             logs.stdout[0].content shouldBe "Hello World\n"
+            logs.allAsText() shouldBe "Hello World\n"
         }
 
         removeContainer(containerId)
@@ -82,14 +95,14 @@ class DockerClientTest : StringSpec({
     "should remove container" {
         val containerId = docker.createContainer(RUNNER_TEST_IMAGE_NAME, createContainerParams).containerId
 
-        docker.removeContainer(containerId).responseStatus shouldBe 204
-        docker.removeContainer(containerId).responseStatus shouldBe 404
+        docker.removeContainer(containerId).status shouldBe 204
+        docker.removeContainer(containerId).status shouldBe 404
     }
 })
 
-const val DOCKERFILE = "Dockerfile"
-const val ENTRY_POINT = "entrypoint.sh"
-const val SOURCE_CODE = "code.cs"
+private const val DOCKERFILE = "Dockerfile"
+private const val ENTRY_POINT = "entrypoint.sh"
+private const val SOURCE_CODE = "code.cs"
 
 private val createContainerParams = CreateContainerParams(
     cmd = SOURCE_CODE,

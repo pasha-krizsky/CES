@@ -14,13 +14,6 @@ import java.time.Duration
 class DockerTestData {
 
     companion object {
-        val dockerHost = with(OS_NAME) {
-            when {
-                contains(WINDOWS, ignoreCase = true) -> DOCKER_HOST_WINDOWS
-                else -> DOCKER_HOST_UNIX
-            }
-        }
-
         const val RUNNER_TEST_IMAGE_NAME = "test-runner-image"
         const val RUNNER_HOME_DIR = "/home/runner"
         const val CODE_EXECUTION_TIMEOUT_MILLIS = 5_000L
@@ -36,7 +29,7 @@ class DockerTestData {
 
         val httpDockerClient: ApacheDockerHttpClient =
             ApacheDockerHttpClient.Builder()
-                .dockerHost(URI(dockerHost))
+                .dockerHost(URI(DockerConfig.socket))
                 .maxConnections(10)
                 .connectionTimeout(connectionTimeout)
                 .responseTimeout(responseTimeout)
@@ -51,7 +44,10 @@ class DockerTestData {
                 .path("/build?t=$RUNNER_TEST_IMAGE_NAME")
                 .body(tmpTarFile.inputStream())
                 .build()
-            httpDockerClient.execute(request)
+            httpDockerClient.execute(request).let { response ->
+                val readAllBytes = response.body.readAllBytes()
+                println("Read ${readAllBytes.size} bytes")
+            }
             tmpTarFile.delete()
         }
 
@@ -86,13 +82,7 @@ class DockerTestData {
     }
 }
 
-private const val WINDOWS = "windows"
-
-val OS_NAME: String = System.getProperty("os.name")
 val TMP_PATH: String = System.getProperty("java.io.tmpdir")
-
-private const val DOCKER_HOST_WINDOWS = "npipe:////./pipe/docker_engine"
-private const val DOCKER_HOST_UNIX = "unix:///var/run/docker.sock"
 
 private val connectionTimeout = Duration.ofSeconds(10)
 private val responseTimeout = Duration.ofMinutes(10)

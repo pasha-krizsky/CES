@@ -56,7 +56,7 @@ class CodeExecutionFlowTest : StringSpec({
 
         minioStorage.createBucket(config.codeExecutionBucketName)
 
-        createTestImage(runnerDockerfile, runnerEntrypoint,)
+        createTestImage(runnerDockerfile, runnerEntrypoint)
 
         flow = CodeExecutionFlow(config, docker, requestQueue, responseQueue, minioStorage)
     }
@@ -67,7 +67,7 @@ class CodeExecutionFlowTest : StringSpec({
             FOUR_SECONDS_SCRIPT to FOUR_SECONDS_SCRIPT_EXPECTED_OUTCOME
         ).forAll { (scriptName, expectedLogs) ->
             val codeExecutionId = CodeExecutionId.random()
-            val storagePath = codeExecutionId.value.toString()
+            val storagePath = "${codeExecutionId.value}/source"
             minioStorage.uploadFile(config.codeExecutionBucketName, loadResource(scriptName).absolutePath, storagePath)
 
             val request = CodeExecutionRequestedEvent(codeExecutionId, now(), C_SHARP, MONO, storagePath)

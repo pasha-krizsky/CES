@@ -93,7 +93,6 @@ class CodeExecutionFlow(
     }
 
     private suspend fun createContainer(scriptName: String): ContainerId {
-        log.debug { "Creating container for code execution" }
         val response = docker.createContainer(config.runner.imageName, createContainerParams(scriptName))
         if (response.isSuccessful())
             return response.containerId
@@ -128,7 +127,6 @@ class CodeExecutionFlow(
     }
 
     private suspend fun startContainer(containerId: ContainerId) {
-        log.debug { "Starting container for code execution" }
         val response = docker.startContainer(containerId)
         if (!response.isSuccessful())
             throw CodeExecutionException("Failed to start container, got ${response.status} response status")
@@ -137,8 +135,7 @@ class CodeExecutionFlow(
     private suspend fun streamExecutionLogs(
         resultsPath: String,
         containerId: ContainerId
-    ): CodeExecutionResults {
-
+    ): CodeExecutionResults = withContext(Dispatchers.IO) {
         val result = withTimeoutOrNull(config.runner.codeExecutionTimeoutMillis) {
             var since = EPOCH
             do {
@@ -156,10 +153,11 @@ class CodeExecutionFlow(
             docker.killContainer(containerId)
         }
 
-        return CodeExecutionResults(
+        val inspection = docker.inspectContainer(containerId)
+        return@withContext CodeExecutionResults(
             state = if (result == null) FAILED else COMPLETED,
-            exitCode = 0, // TODO set proper exit code
-            failureReason = if (result == null) TIME_LIMIT_EXCEEDED else NONE
+            failureReason = if (result == null) TIME_LIMIT_EXCEEDED else NONE,
+            exitCode = inspection.exitCode,
         )
     }
 
@@ -172,15 +170,14 @@ class CodeExecutionFlow(
             val file = if (!firstChunk)
                 storage.downloadFile(config.codeExecutionBucketName, resultsPath, tmpLocalDestination)
             else File(tmpLocalDestination)
-            val textLogs = logs.mergeToString()
-            file.appendText(textLogs)
+            file.appendText(logs.allAsText())
 
             storage.uploadFile(config.codeExecutionBucketName, tmpLocalDestination, resultsPath)
             file.delete()
         }
 
     private suspend fun sendExecutionFinishedEvent(id: CodeExecutionId, results: CodeExecutionResults) {
-        val event = CodeExecutionFinishedEvent(id, now(), results.state, results.exitCode, results.failureReason)
+        val event = CodeExecutionFinishedEvent(id, now(), results.state, results.exitCode!!, results.failureReason)
         responseQueue.sendMessage(Message(encodeCodeExecutionEvent(event)))
     }
 
@@ -202,8 +199,8 @@ class CodeExecutionFlow(
 
 class CodeExecutionResults(
     val state: CodeExecutionState,
-    val exitCode: Int,
     val failureReason: CodeExecutionFailureReason,
+    val exitCode: Int?,
 )
 
 class CodeExecutionException(message: String) : RuntimeException(message)

@@ -2,11 +2,12 @@ package com.ces.worker.module
 
 import com.ces.infrastructure.docker.Docker
 import com.ces.infrastructure.docker.DockerClient
+import com.ces.infrastructure.docker.DockerConfig
 import com.ces.infrastructure.minio.MinioStorage
 import com.ces.infrastructure.minio.ObjectStorage
 import com.ces.infrastructure.rabbitmq.MessageQueue
 import com.ces.infrastructure.rabbitmq.RabbitMessageQueue
-import com.ces.worker.CodeExecutor
+import com.ces.worker.Bootstrap
 import com.ces.worker.config.WorkerConfig
 import com.ces.worker.flow.CodeExecutionFlow
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient
@@ -30,7 +31,7 @@ val workerModule = module {
     single {
         DockerClient(
             ApacheDockerHttpClient.Builder()
-                .dockerHost(URI.create(workerConfig.docker.socket))
+                .dockerHost(URI.create(DockerConfig.socket))
                 .maxConnections(10)
                 .connectionTimeout(Duration.ofSeconds(10))
                 .responseTimeout(Duration.ofMinutes(5))
@@ -80,7 +81,7 @@ val workerModule = module {
     }
 
     single {
-        CodeExecutor(get())
+        Bootstrap(workerConfig, get(), get())
     }
 }
 

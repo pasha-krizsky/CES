@@ -1,13 +1,11 @@
 package com.ces.worker.config
 
-import com.ces.infrastructure.docker.DockerConfig
 import com.ces.infrastructure.minio.MinioConfig
 import com.ces.infrastructure.rabbitmq.config.QueueConfig
 import com.ces.infrastructure.rabbitmq.config.RabbitmqConfig
 import com.typesafe.config.Config
 
 class WorkerConfig(
-    val docker: DockerConfig,
     val runner: RunnerConfig,
     val rabbitmq: RabbitmqConfig,
     val codeExecutionRequestQueue: QueueConfig,
@@ -17,8 +15,6 @@ class WorkerConfig(
 ) {
     companion object {
         fun from(config: Config): WorkerConfig {
-            val docker = DockerConfig(socket = stringProperty(config, DOCKER_SOCKET))
-
             val runner = RunnerConfig(
                 imageName = stringProperty(config, RUNNER_IMAGE_NAME),
                 workDir = stringProperty(config, RUNNER_WORK_DIR),
@@ -61,7 +57,6 @@ class WorkerConfig(
                 codeExecutionResponseQueue = codeExecutionResponseQueue,
                 minio = minio,
                 codeExecutionBucketName = codeExecutionBucketName,
-                docker = docker,
                 runner = runner,
             )
         }
@@ -69,8 +64,6 @@ class WorkerConfig(
         private fun stringProperty(hocon: Config, name: String) = hocon.getString(name)
         private fun intProperty(hocon: Config, name: String) = stringProperty(hocon, name).toInt()
         private fun longProperty(hocon: Config, name: String) = stringProperty(hocon, name).toLong()
-
-        private const val DOCKER_SOCKET = "docker.socket"
 
         private const val RUNNER_IMAGE_NAME = "runner.imageName"
         private const val RUNNER_WORK_DIR = "runner.workDir"

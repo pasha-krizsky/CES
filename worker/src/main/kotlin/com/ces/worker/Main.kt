@@ -11,7 +11,7 @@ fun main(): Unit = runBlocking {
         modules(workerModule)
     }
 
-    val executor: CodeExecutor = GlobalContext.get().get(CodeExecutor::class)
+    val bootstrap: Bootstrap = GlobalContext.get().get(Bootstrap::class)
 
-    executor.run()
+    bootstrap.start()
 }
