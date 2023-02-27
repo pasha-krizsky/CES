@@ -5,6 +5,8 @@ val kotestVersion: String by project
 val kotestExtensionsVersion: String by project
 val apacheCommonsTextVersion: String by project
 val rabbitmqVersion: String by project
+val logbackVersion: String by project
+val kotlinLoggingVersion: String by project
 
 plugins {
     id("kotlin")
@@ -22,6 +24,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$kotlinxCoroutinesVersion")
     implementation("com.rabbitmq:amqp-client:$rabbitmqVersion")
+
+    implementation("ch.qos.logback:logback-classic:$logbackVersion")
+    implementation("io.github.microutils:kotlin-logging-jvm:$kotlinLoggingVersion")
 
     testImplementation("io.kotest:kotest-assertions-core:$kotestVersion")
     testImplementation("io.kotest:kotest-assertions-json:$kotestVersion")

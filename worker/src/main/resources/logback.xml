@@ -5,8 +5,8 @@
         </encoder>
     </appender>
 
-    <root level="INFO">
+    <root level="debug">
         <appender-ref ref="STDOUT" />
     </root>
-    <logger name="org.apache.hc" level="WARN"/>
+    <logger name="org.apache.hc" level="INFO"/>
 </configuration>
