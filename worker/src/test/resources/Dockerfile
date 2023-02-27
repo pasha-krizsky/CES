@@ -7,7 +7,6 @@ RUN apt-get install -y binutils curl mono-devel ca-certificates-mono fsharp mono
 
 WORKDIR /home/runner
 COPY entrypoint.sh /home/runner
-COPY basic_script.cs /home/runner
 
 RUN chmod +x entrypoint.sh
 ENTRYPOINT ["/home/runner/entrypoint.sh"]

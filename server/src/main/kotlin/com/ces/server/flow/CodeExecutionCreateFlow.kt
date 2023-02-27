@@ -30,7 +30,7 @@ class CodeExecutionCreateFlow(
         val tmpLocalFile = File(tmpLocalPath)
         tmpLocalFile.appendText(request.sourceCode)
 
-        val storagePath = codeExecutionId.value.toString()
+        val storagePath = "${codeExecutionId.value}/$SOURCE_CODE_FILE_NAME"
         storage.uploadFile(config.codeExecutionBucketName, tmpLocalPath, storagePath)
         tmpLocalFile.delete()
 
@@ -51,6 +51,7 @@ class CodeExecutionCreateFlow(
     }
 
     companion object {
+        private const val SOURCE_CODE_FILE_NAME = "source"
         private val TMP_DIR: String = System.getProperty("java.io.tmpdir")
     }
 }

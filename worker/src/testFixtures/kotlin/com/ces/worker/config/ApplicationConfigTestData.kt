@@ -1,6 +1,5 @@
 package com.ces.worker.config
 
-import com.ces.infrastructure.docker.DockerConfig
 import com.ces.infrastructure.docker.DockerTestData.Companion.CODE_EXECUTION_TIMEOUT_MILLIS
 import com.ces.infrastructure.docker.DockerTestData.Companion.LOGS_POLL_INTERVAL_MILLIS
 import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_CAP_DROP
@@ -12,7 +11,6 @@ import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_MEMORY
 import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_MEMORY_SWAP
 import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_NETWORK_MODE
 import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_TEST_IMAGE_NAME
-import com.ces.infrastructure.docker.DockerTestData.Companion.dockerHost
 import com.ces.infrastructure.minio.MinioConfig
 import com.ces.infrastructure.minio.MinioTestData.Companion.MINIO_ACCESS_KEY
 import com.ces.infrastructure.minio.MinioTestData.Companion.MINIO_CODE_EXECUTION_BUCKET_NAME
@@ -33,7 +31,6 @@ class ApplicationConfigTestData {
 
     companion object {
         fun applicationConfig() = WorkerConfig(
-            docker = DockerConfig(dockerHost),
             runner = RunnerConfig(
                 imageName = RUNNER_TEST_IMAGE_NAME,
                 workDir = RUNNER_HOME_DIR,

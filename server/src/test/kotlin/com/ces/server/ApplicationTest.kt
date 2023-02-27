@@ -68,7 +68,7 @@ class ApplicationTest : StringSpec({
             val codeExecutionId = createdResponse.id
             val resultPath = tempdir().absolutePath + "_tmp"
             val sourceCode =
-                minioStorage.downloadFile(config.codeExecutionBucketName, codeExecutionId.value.toString(), resultPath)
+                minioStorage.downloadFile(config.codeExecutionBucketName, "${codeExecutionId.value}/source", resultPath)
 
             sourceCode.readText() shouldBe "source code"
             val message = requestQueue.receiveMessage()
