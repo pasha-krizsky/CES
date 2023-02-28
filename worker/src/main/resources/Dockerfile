@@ -8,5 +8,6 @@ RUN useradd -ms /bin/bash runner
 WORKDIR /home/runner
 COPY entrypoint.sh /home/runner
 
+RUN chmod +x entrypoint.sh
 USER runner
 ENTRYPOINT ["/home/runner/entrypoint.sh"]
