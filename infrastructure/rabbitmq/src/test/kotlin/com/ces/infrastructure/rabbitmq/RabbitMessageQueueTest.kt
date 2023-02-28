@@ -15,19 +15,22 @@ class RabbitMessageQueueTest : StringSpec({
     extension(RabbitmqExtension())
 
     "should send and receive message" {
-        val queue = RabbitMessageQueue(
-            randomAlphabetic(10).lowercase(), RabbitmqConfig(
+        val connector = RabbitmqConnector(
+            RabbitmqConfig(
                 user = RABBIT_MQ_USER,
                 password = RABBIT_MQ_PASSWORD,
                 host = RABBIT_MQ_HOST,
                 port = RABBIT_MQ_PORT,
             )
         )
+        val queueName = randomAlphabetic(10).lowercase()
+        val sendQueue = RabbitSendQueue(queueName, connector)
+        val receiveQueue = RabbitReceiveQueue(queueName, connector)
 
         val sourceMessage = Message(randomAlphanumeric(TEST_MESSAGE_CONTENT_LENGTH))
-        queue.sendMessage(sourceMessage)
+        sendQueue.sendMessage(sourceMessage)
 
-        val receivedMessage = queue.receiveMessage()
+        val receivedMessage = receiveQueue.receiveMessage()
 
         receivedMessage.content shouldBe sourceMessage.content
     }

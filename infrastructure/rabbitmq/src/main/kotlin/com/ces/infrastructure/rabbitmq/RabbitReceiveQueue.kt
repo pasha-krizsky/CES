@@ -1,43 +1,31 @@
 package com.ces.infrastructure.rabbitmq
 
-import com.ces.infrastructure.rabbitmq.config.RabbitmqConfig
 import com.rabbitmq.client.CancelCallback
-import com.rabbitmq.client.Connection
-import com.rabbitmq.client.ConnectionFactory
 import com.rabbitmq.client.DeliverCallback
-import com.rabbitmq.client.impl.DefaultCredentialsProvider
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import mu.KotlinLogging
 import java.nio.charset.StandardCharsets.UTF_8
+import java.util.UUID.randomUUID
 import com.rabbitmq.client.Channel as RabbitChannel
 import kotlinx.coroutines.channels.Channel as CoroutineChannel
 
-class RabbitMessageQueue(
-    private val queueName: String,
-    config: RabbitmqConfig,
+class RabbitReceiveQueue(
+    queueName: String,
+    connector: RabbitmqConnector,
     prefetchCount: Int = 1,
-) : MessageQueue {
+) : ReceiveQueue {
 
     private val log = KotlinLogging.logger {}
 
     private val deliveryChannel = CoroutineChannel<ReceivedMessage>(capacity = prefetchCount)
 
-    // TODO share connections/channels between queues
-    private val rabbitConnection: Connection
     private val rabbitChannel: RabbitChannel
 
     private val deliveryHandler: DeliverCallback
     private val cancelHandler: CancelCallback
 
     init {
-        val connectionFactory = ConnectionFactory()
-        connectionFactory.setCredentialsProvider(DefaultCredentialsProvider(config.user, config.password))
-        connectionFactory.host = config.host
-        connectionFactory.port = config.port
-        rabbitConnection = connectionFactory.newConnection()
-        rabbitChannel = rabbitConnection.createChannel()
+        rabbitChannel = connector.rabbitChannel
         deliveryHandler = DeliverCallback { _, delivery ->
             runBlocking {
                 val messageId = delivery.envelope.deliveryTag.toString()
@@ -51,12 +39,8 @@ class RabbitMessageQueue(
 
         rabbitChannel.basicQos(prefetchCount)
         rabbitChannel.queueDeclare(queueName, false, false, false, null)
-        rabbitChannel.basicConsume(queueName, AUTO_ACC, CONSUMER_TAG, deliveryHandler, cancelHandler)
-    }
-
-    override suspend fun sendMessage(message: Message) = withContext(Dispatchers.IO) {
-        log.debug { "Sending a message, content=${message.content}" }
-        rabbitChannel.basicPublish(EXCHANGE_NAME, queueName, null, message.content.toByteArray(UTF_8))
+        val consumerTag = "$CONSUMER_TAG_PREFIX${randomUUID()}"
+        rabbitChannel.basicConsume(queueName, AUTO_ACC, consumerTag, deliveryHandler, cancelHandler)
     }
 
     override suspend fun receiveMessage(): ReceivedMessage {
@@ -73,14 +57,8 @@ class RabbitMessageQueue(
         rabbitChannel.basicNack(id.toLong(), false, requeue)
     }
 
-    override fun close() {
-        rabbitChannel.close()
-        rabbitConnection.close()
-    }
-
     companion object {
-        const val EXCHANGE_NAME = ""
-        const val CONSUMER_TAG = "worker"
+        const val CONSUMER_TAG_PREFIX = "worker"
         const val AUTO_ACC = false
     }
 }

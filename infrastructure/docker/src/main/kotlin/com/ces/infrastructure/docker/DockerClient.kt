@@ -119,6 +119,7 @@ class DockerClient(
 
         log.debug { "Starting container: containerId=${containerId}" }
         httpClient.execute(request).let { response ->
+            log.debug { "Starting container response: ${IOUtils.toString(response.body, UTF_8)}" }
             return@withContext StartContainerResponse(response.statusCode)
         }
     }
@@ -223,7 +224,7 @@ class DockerClient(
             ?.jsonObject?.get("Status")
             ?.toString()
             ?.trim('"')
-            ?.let { ContainerStatus.valueOf(it.toUpperCase()) }
+            ?.let { ContainerStatus.valueOf(it.uppercase()) }
             ?: NOT_FOUND
 
     private fun containerExitCode(response: String): Int? =

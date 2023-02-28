@@ -7,9 +7,10 @@ import com.ces.domain.types.ProgrammingLanguage.C_SHARP
 import com.ces.infrastructure.minio.MinioExtension
 import com.ces.infrastructure.minio.MinioStorage
 import com.ces.infrastructure.minio.ObjectStorage
-import com.ces.infrastructure.rabbitmq.MessageQueue
-import com.ces.infrastructure.rabbitmq.RabbitMessageQueue
+import com.ces.infrastructure.rabbitmq.RabbitReceiveQueue
+import com.ces.infrastructure.rabbitmq.RabbitmqConnector
 import com.ces.infrastructure.rabbitmq.RabbitmqExtension
+import com.ces.infrastructure.rabbitmq.ReceiveQueue
 import com.ces.server.config.ServerConfig
 import com.ces.server.models.CodeExecutionRequest
 import com.ces.server.models.CodeExecutionView
@@ -42,11 +43,13 @@ class ApplicationTest : StringSpec({
     extension(MinioExtension(config.minio.accessKey, config.minio.secretKey))
     extension(RabbitmqExtension())
 
-    lateinit var requestQueue: MessageQueue
+    lateinit var connector: RabbitmqConnector
+    lateinit var requestQueue: ReceiveQueue
     lateinit var minioStorage: ObjectStorage
 
     beforeSpec {
-        requestQueue = requestQueue()
+        connector = RabbitmqConnector(config.rabbitmq)
+        requestQueue = requestQueue(connector)
         minioStorage = minioStorage()
 
         minioStorage.createBucket(config.codeExecutionBucketName)
@@ -117,10 +120,8 @@ class ApplicationTest : StringSpec({
     }
 })
 
-private fun requestQueue() = RabbitMessageQueue(
-    config.codeExecutionRequestQueue.name,
-    config.rabbitmq,
-    config.codeExecutionRequestQueue.prefetchCount
+private fun requestQueue(connector: RabbitmqConnector) = RabbitReceiveQueue(
+    config.codeExecutionRequestQueue.name, connector
 )
 
 private fun minioStorage() = MinioStorage(

@@ -6,12 +6,12 @@ import com.ces.domain.events.CodeExecutionStartedEvent
 import com.ces.domain.json.JsonConfig
 import com.ces.domain.types.CodeExecutionState.STARTED
 import com.ces.infrastructure.rabbitmq.DeliveryId
-import com.ces.infrastructure.rabbitmq.MessageQueue
+import com.ces.infrastructure.rabbitmq.ReceiveQueue
 import com.ces.server.storage.CodeExecutionDao
 import mu.KotlinLogging
 
 class CodeExecutionEventsListener(
-    private val responseQueue: MessageQueue,
+    private val responseQueue: ReceiveQueue,
     private val database: CodeExecutionDao,
 ) {
 

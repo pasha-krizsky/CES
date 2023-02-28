@@ -16,10 +16,7 @@ import com.ces.infrastructure.docker.DockerTestData.Companion.loadResource
 import com.ces.infrastructure.minio.MinioExtension
 import com.ces.infrastructure.minio.MinioStorage
 import com.ces.infrastructure.minio.ObjectStorage
-import com.ces.infrastructure.rabbitmq.Message
-import com.ces.infrastructure.rabbitmq.MessageQueue
-import com.ces.infrastructure.rabbitmq.RabbitMessageQueue
-import com.ces.infrastructure.rabbitmq.RabbitmqExtension
+import com.ces.infrastructure.rabbitmq.*
 import com.ces.worker.config.ApplicationConfigTestData.Companion.applicationConfig
 import com.ces.worker.flow.CodeExecutionFlow
 import io.kotest.core.spec.style.StringSpec
@@ -44,21 +41,29 @@ class CodeExecutionFlowTest : StringSpec({
 
     val docker = DockerClient(DockerTestData.httpDockerClient)
 
-    lateinit var requestQueue: MessageQueue
-    lateinit var responseQueue: MessageQueue
+    lateinit var connector: RabbitmqConnector
+
+    lateinit var requestQueueIn: ReceiveQueue
+    lateinit var requestQueueOut: SendQueue
+    lateinit var responseQueueIn: ReceiveQueue
+    lateinit var responseQueueOut: SendQueue
     lateinit var minioStorage: ObjectStorage
 
     lateinit var flow: CodeExecutionFlow
     beforeSpec {
-        requestQueue = requestQueue()
-        responseQueue = responseQueue()
+        connector = RabbitmqConnector(config.rabbitmq)
+
+        requestQueueIn = requestInQueue(connector)
+        requestQueueOut = requestOutQueue(connector)
+        responseQueueIn = responseInQueue(connector)
+        responseQueueOut = responseOutQueue(connector)
         minioStorage = minioStorage()
 
         minioStorage.createBucket(config.codeExecutionBucketName)
 
         createTestImage(runnerDockerfile, runnerEntrypoint)
 
-        flow = CodeExecutionFlow(config, docker, requestQueue, responseQueue, minioStorage)
+        flow = CodeExecutionFlow(config, docker, requestQueueIn, responseQueueOut, minioStorage)
     }
 
     "should run code execution flow" {
@@ -71,25 +76,25 @@ class CodeExecutionFlowTest : StringSpec({
             minioStorage.uploadFile(config.codeExecutionBucketName, loadResource(scriptName).absolutePath, storagePath)
 
             val request = CodeExecutionRequestedEvent(codeExecutionId, now(), C_SHARP, MONO, storagePath)
-            requestQueue.sendMessage(Message(encodeCodeExecutionEvent(request)))
+            requestQueueOut.sendMessage(Message(encodeCodeExecutionEvent(request)))
 
             flow.run()
 
-            val startedResponse = responseQueue.receiveMessage()
+            val startedResponse = responseQueueIn.receiveMessage()
             val startedEvent = decodeCodeExecutionEvent(startedResponse.content)
             startedEvent.shouldBeInstanceOf<CodeExecutionStartedEvent>()
             startedEvent.id shouldBe codeExecutionId
             startedEvent.executionLogsPath shouldBe "${codeExecutionId.value}/$RESULTS_FILE"
-            responseQueue.markProcessed(startedResponse.deliveryId)
+            responseQueueIn.markProcessed(startedResponse.deliveryId)
 
-            shouldReceiveCorrectExecutionFinishedEvent(responseQueue, codeExecutionId)
+            shouldReceiveCorrectExecutionFinishedEvent(responseQueueIn, codeExecutionId)
             shouldStoreCorrectExecutionLogsToObjectStorage(minioStorage, startedEvent, expectedLogs)
         }
     }
 })
 
 private suspend fun StringSpec.shouldReceiveCorrectExecutionFinishedEvent(
-    responseQueue: MessageQueue,
+    responseQueue: ReceiveQueue,
     codeExecutionId: CodeExecutionId
 ) {
     val finishedResponse = responseQueue.receiveMessage()
@@ -114,16 +119,20 @@ private suspend fun StringSpec.shouldStoreCorrectExecutionLogsToObjectStorage(
     logs.delete()
 }
 
-private fun requestQueue() = RabbitMessageQueue(
-    config.codeExecutionRequestQueue.name,
-    config.rabbitmq,
-    config.codeExecutionRequestQueue.prefetchCount
+private fun requestInQueue(connector: RabbitmqConnector) = RabbitReceiveQueue(
+    config.codeExecutionRequestQueue.name, connector
 )
 
-private fun responseQueue() = RabbitMessageQueue(
-    config.codeExecutionResponseQueue.name,
-    config.rabbitmq,
-    config.codeExecutionResponseQueue.prefetchCount
+private fun requestOutQueue(connector: RabbitmqConnector) = RabbitSendQueue(
+    config.codeExecutionRequestQueue.name, connector
+)
+
+private fun responseInQueue(connector: RabbitmqConnector) = RabbitReceiveQueue(
+    config.codeExecutionResponseQueue.name, connector
+)
+
+private fun responseOutQueue(connector: RabbitmqConnector) = RabbitSendQueue(
+    config.codeExecutionResponseQueue.name, connector
 )
 
 private fun minioStorage() = MinioStorage(

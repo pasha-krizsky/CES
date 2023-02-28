@@ -7,7 +7,7 @@ import com.ces.domain.types.CodeExecutionId
 import com.ces.domain.types.CodeExecutionState.CREATED
 import com.ces.infrastructure.minio.ObjectStorage
 import com.ces.infrastructure.rabbitmq.Message
-import com.ces.infrastructure.rabbitmq.MessageQueue
+import com.ces.infrastructure.rabbitmq.SendQueue
 import com.ces.server.config.ServerConfig
 import com.ces.server.models.CodeExecutionRequest
 import com.ces.server.storage.CodeExecutionDao
@@ -19,7 +19,7 @@ class CodeExecutionCreateFlow(
     private val config: ServerConfig,
     private val database: CodeExecutionDao,
     private val storage: ObjectStorage,
-    private val requestQueue: MessageQueue,
+    private val requestQueue: SendQueue,
 ) {
 
     suspend fun run(request: CodeExecutionRequest): CodeExecution {

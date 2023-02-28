@@ -2,8 +2,7 @@ package com.ces.server.module
 
 import com.ces.infrastructure.minio.MinioStorage
 import com.ces.infrastructure.minio.ObjectStorage
-import com.ces.infrastructure.rabbitmq.MessageQueue
-import com.ces.infrastructure.rabbitmq.RabbitMessageQueue
+import com.ces.infrastructure.rabbitmq.*
 import com.ces.server.config.ServerConfig
 import com.ces.server.flow.CodeExecutionCreateFlow
 import com.ces.server.listener.CodeExecutionEventsListener
@@ -33,25 +32,24 @@ val serverModule = module {
     }
     singleOf(::MinioStorage) bind ObjectStorage::class
 
+
     single {
-        RabbitMessageQueue(
-            serverConfig.codeExecutionRequestQueue.name,
-            serverConfig.rabbitmq,
-            serverConfig.codeExecutionRequestQueue.prefetchCount,
-        )
-    } withOptions {
+        RabbitmqConnector(serverConfig.rabbitmq)
+    }
+
+    single { RabbitSendQueue(serverConfig.codeExecutionRequestQueue.name, get()) } withOptions {
         named(REQUEST_QUEUE_QUALIFIER)
-        bind<MessageQueue>()
+        bind<SendQueue>()
     }
     single {
-        RabbitMessageQueue(
+        RabbitReceiveQueue(
             serverConfig.codeExecutionResponseQueue.name,
-            serverConfig.rabbitmq,
-            serverConfig.codeExecutionResponseQueue.prefetchCount,
+            get(),
+            serverConfig.codeExecutionResponseQueue.prefetchCount
         )
     } withOptions {
         named(RESPONSE_QUEUE_QUALIFIER)
-        bind<MessageQueue>()
+        bind<ReceiveQueue>()
     }
 
     singleOf(::CodeExecutionInMemoryDao) bind CodeExecutionDao::class

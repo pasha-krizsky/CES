@@ -8,10 +8,7 @@ import com.ces.domain.events.DomainTestData.Companion.aStartedCodeExecution
 import com.ces.domain.json.JsonConfig.Companion.encodeCodeExecutionEvent
 import com.ces.domain.types.CodeExecutionFailureReason.NONE
 import com.ces.domain.types.CodeExecutionState.*
-import com.ces.infrastructure.rabbitmq.Message
-import com.ces.infrastructure.rabbitmq.MessageQueue
-import com.ces.infrastructure.rabbitmq.RabbitMessageQueue
-import com.ces.infrastructure.rabbitmq.RabbitmqExtension
+import com.ces.infrastructure.rabbitmq.*
 import com.ces.server.config.ServerConfig
 import com.ces.server.storage.CodeExecutionDao
 import com.ces.server.storage.CodeExecutionInMemoryDao
@@ -29,14 +26,20 @@ val config = ServerConfig.from(HoconApplicationConfig(ConfigFactory.load()))
 class CodeExecutionEventsListenerTest : StringSpec({
     extension(RabbitmqExtension())
 
-    lateinit var responseQueue: MessageQueue
+    lateinit var connector: RabbitmqConnector
+
+    lateinit var responseQueueOut: SendQueue
+    lateinit var responseQueueIn: ReceiveQueue
     lateinit var database: CodeExecutionDao
     lateinit var listener: CodeExecutionEventsListener
 
     beforeSpec {
-        responseQueue = responseQueue()
+        connector = RabbitmqConnector(config.rabbitmq)
+
+        responseQueueIn = responseInQueue(connector)
+        responseQueueOut = responseOutQueue(connector)
         database = CodeExecutionInMemoryDao()
-        listener = CodeExecutionEventsListener(responseQueue, database)
+        listener = CodeExecutionEventsListener(responseQueueIn, database)
     }
 
     "should mark code execution as started" {
@@ -44,7 +47,7 @@ class CodeExecutionEventsListenerTest : StringSpec({
         database.upsert(codeExecution)
 
         val startedEvent = aCodeExecutionStartedEvent().apply { id = codeExecution.id }.build()
-        responseQueue.sendMessage(Message(encodeCodeExecutionEvent(startedEvent)))
+        responseQueueOut.sendMessage(Message(encodeCodeExecutionEvent(startedEvent)))
 
         val listenerJob = launch {
             listener.run()
@@ -64,7 +67,7 @@ class CodeExecutionEventsListenerTest : StringSpec({
         database.upsert(codeExecution)
 
         val completedEvent = aCodeExecutionCompletedEvent().apply { id = codeExecution.id }.build()
-        responseQueue.sendMessage(Message(encodeCodeExecutionEvent(completedEvent)))
+        responseQueueOut.sendMessage(Message(encodeCodeExecutionEvent(completedEvent)))
 
         val listenerJob = launch {
             listener.run()
@@ -86,7 +89,7 @@ class CodeExecutionEventsListenerTest : StringSpec({
         database.upsert(codeExecution)
 
         val failedEvent = aCodeExecutionFailedEvent().apply { id = codeExecution.id }.build()
-        responseQueue.sendMessage(Message(encodeCodeExecutionEvent(failedEvent)))
+        responseQueueOut.sendMessage(Message(encodeCodeExecutionEvent(failedEvent)))
 
         val listenerJob = launch {
             listener.run()
@@ -104,8 +107,10 @@ class CodeExecutionEventsListenerTest : StringSpec({
     }
 })
 
-private fun responseQueue() = RabbitMessageQueue(
-    config.codeExecutionResponseQueue.name,
-    config.rabbitmq,
-    config.codeExecutionResponseQueue.prefetchCount
+private fun responseInQueue(connector: RabbitmqConnector) = RabbitReceiveQueue(
+    config.codeExecutionResponseQueue.name, connector
+)
+
+private fun responseOutQueue(connector: RabbitmqConnector) = RabbitSendQueue(
+    config.codeExecutionResponseQueue.name, connector
 )
