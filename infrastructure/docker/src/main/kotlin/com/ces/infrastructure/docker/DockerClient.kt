@@ -83,6 +83,7 @@ class DockerClient(
         log.debug { "Creating container: image=$image" }
         httpClient.execute(request).let { response ->
             val body = IOUtils.toString(response.body, UTF_8)
+            log.debug { "Create container response: $body" }
             return@withContext CreateContainerResponse(
                 response.statusCode,
                 body.containerId()
@@ -100,11 +101,27 @@ class DockerClient(
           "HostConfig": {
             "CapDrop": "${params.capDrop}",
             "CgroupnsMode": "${params.cgroupnsMode}",
+            "SecurityOpt": [ "no-new-privileges" ],
             "NetworkMode": "${params.networkMode}",
             "CpusetCpus": "${params.cpusetCpus}",
             "CpuQuota": ${params.cpuQuota},
-            "Memory": ${params.memory},
-            "MemorySwap": ${params.memorySwap}
+            "Memory": ${params.memoryBytes},
+            "MemorySwap": ${params.memorySwapBytes},
+            "KernelMemoryTCP": ${params.kernelMemoryTcpBytes},
+            "PidsLimit": ${params.pidsLimit},
+            "IpcMode": "${params.ipcMode}",
+            "Ulimits": [
+              {
+                "Name": "nofile",
+                "Soft": ${params.nofileSoft},
+                "Hard": ${params.nofileHard}
+              },
+              {
+                "Name": "nproc",
+                "Soft": ${params.nprocSoft},
+                "Hard": ${params.nprocHard}
+              }
+            ]
           }
         }
         """.trimIndent().byteInputStream()

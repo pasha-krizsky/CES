@@ -26,6 +26,13 @@ class DockerTestData {
         const val RUNNER_CPU_QUOTA = 10000000L
         const val RUNNER_MEMORY = 100000000L
         const val RUNNER_MEMORY_SWAP = 500000000L
+        const val RUNNER_KERNEL_MEMORY = 100000000L
+        const val RUNNER_PIDS_LIMIT = 8
+        const val RUNNER_IPC_MODE = "none"
+        const val RUNNER_NOFILE_SOFT = 128
+        const val RUNNER_NOFILE_HARD = 256
+        const val RUNNER_NPROC_SOFT = 8
+        const val RUNNER_NPROC_HARD = 16
 
         val httpDockerClient: ApacheDockerHttpClient =
             ApacheDockerHttpClient.Builder()

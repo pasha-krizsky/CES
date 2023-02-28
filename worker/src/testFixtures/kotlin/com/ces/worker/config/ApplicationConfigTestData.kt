@@ -7,9 +7,16 @@ import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_CGROUPNS_MO
 import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_CPUSET_CPUS
 import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_CPU_QUOTA
 import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_HOME_DIR
+import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_IPC_MODE
+import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_KERNEL_MEMORY
 import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_MEMORY
 import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_MEMORY_SWAP
 import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_NETWORK_MODE
+import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_NOFILE_HARD
+import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_NOFILE_SOFT
+import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_NPROC_HARD
+import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_NPROC_SOFT
+import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_PIDS_LIMIT
 import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_TEST_IMAGE_NAME
 import com.ces.infrastructure.minio.MinioConfig
 import com.ces.infrastructure.minio.MinioTestData.Companion.MINIO_ACCESS_KEY
@@ -44,6 +51,13 @@ class ApplicationConfigTestData {
                     cpuQuota = RUNNER_CPU_QUOTA,
                     memory = RUNNER_MEMORY,
                     memorySwap = RUNNER_MEMORY_SWAP,
+                    kernelMemoryTcpBytes = RUNNER_KERNEL_MEMORY,
+                    pidsLimit = RUNNER_PIDS_LIMIT,
+                    ipcMode = RUNNER_IPC_MODE,
+                    nofileSoft = RUNNER_NOFILE_SOFT,
+                    nofileHard = RUNNER_NOFILE_HARD,
+                    nprocSoft = RUNNER_NPROC_SOFT,
+                    nprocHard = RUNNER_NPROC_HARD,
                 )
             ),
             codeExecutionBucketName = MINIO_CODE_EXECUTION_BUCKET_NAME,

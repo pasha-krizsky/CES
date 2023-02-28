@@ -109,8 +109,15 @@ class CodeExecutionFlow(
                 networkMode = networkMode,
                 cpusetCpus = cpusetCpus,
                 cpuQuota = cpuQuota,
-                memory = memory,
-                memorySwap = memorySwap,
+                memoryBytes = memory,
+                memorySwapBytes = memorySwap,
+                kernelMemoryTcpBytes = kernelMemoryTcpBytes,
+                pidsLimit = pidsLimit,
+                ipcMode = ipcMode,
+                nofileSoft = nofileSoft,
+                nofileHard = nofileHard,
+                nprocSoft = nprocSoft,
+                nprocHard = nprocHard,
             )
         }
     }

@@ -28,6 +28,13 @@ class WorkerConfig(
                     cpuQuota = longProperty(config, CPU_QUOTA),
                     memory = longProperty(config, MEMORY),
                     memorySwap = longProperty(config, MEMORY_SWAP),
+                    kernelMemoryTcpBytes = longProperty(config, KERNEL_MEMORY_TCP),
+                    pidsLimit = intProperty(config, PIDS_LIMIT),
+                    ipcMode = stringProperty(config, IPC_MODE),
+                    nofileSoft = intProperty(config, NOFILE_SOFT),
+                    nofileHard = intProperty(config, NOFILE_HARD),
+                    nprocSoft = intProperty(config, NPROC_SOFT),
+                    nprocHard = intProperty(config, NPROC_HARD),
                 )
             )
             val codeExecutionBucketName = stringProperty(config, BUCKET_NAME)
@@ -77,6 +84,13 @@ class WorkerConfig(
         private const val CPU_QUOTA = "runner.container.cpuQuota"
         private const val MEMORY = "runner.container.memory"
         private const val MEMORY_SWAP = "runner.container.memorySwap"
+        private const val KERNEL_MEMORY_TCP = "runner.container.kernelMemoryTcp"
+        private const val PIDS_LIMIT = "runner.container.pidsLimit"
+        private const val IPC_MODE = "runner.container.ipcMode"
+        private const val NOFILE_SOFT = "runner.container.nofileSoft"
+        private const val NOFILE_HARD = "runner.container.nofileHard"
+        private const val NPROC_SOFT = "runner.container.nprocSoft"
+        private const val NPROC_HARD = "runner.container.nprocHard"
 
         private const val BUCKET_NAME = "codeExecutionBucketName"
 
