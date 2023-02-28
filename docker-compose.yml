@@ -40,7 +40,8 @@ services:
     build: worker/
     container_name: worker
     volumes:
-      - //var/run/docker.sock:/var/run/docker.sock
+      #- /var/run/docker.sock:/var/run/docker.sock # mac
+      - //var/run/docker.sock:/var/run/docker.sock # windows
     depends_on:
       - server
     restart: on-failure
