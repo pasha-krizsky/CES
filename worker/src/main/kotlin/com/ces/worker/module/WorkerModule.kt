@@ -5,8 +5,7 @@ import com.ces.infrastructure.docker.DockerClient
 import com.ces.infrastructure.docker.DockerConfig
 import com.ces.infrastructure.minio.MinioStorage
 import com.ces.infrastructure.minio.ObjectStorage
-import com.ces.infrastructure.rabbitmq.MessageQueue
-import com.ces.infrastructure.rabbitmq.RabbitMessageQueue
+import com.ces.infrastructure.rabbitmq.*
 import com.ces.worker.Bootstrap
 import com.ces.worker.config.WorkerConfig
 import com.ces.worker.flow.CodeExecutionFlow
@@ -50,24 +49,22 @@ val workerModule = module {
     singleOf(::MinioStorage) bind ObjectStorage::class
 
     single {
-        RabbitMessageQueue(
+        RabbitmqConnector(workerConfig.rabbitmq)
+    }
+
+    single {
+        RabbitReceiveQueue(
             workerConfig.codeExecutionRequestQueue.name,
-            workerConfig.rabbitmq,
-            workerConfig.codeExecutionRequestQueue.prefetchCount,
+            get(),
+            workerConfig.codeExecutionRequestQueue.prefetchCount
         )
     } withOptions {
         named(REQUEST_QUEUE_QUALIFIER)
-        bind<MessageQueue>()
+        bind<ReceiveQueue>()
     }
-    single {
-        RabbitMessageQueue(
-            workerConfig.codeExecutionResponseQueue.name,
-            workerConfig.rabbitmq,
-            workerConfig.codeExecutionResponseQueue.prefetchCount,
-        )
-    } withOptions {
+    single { RabbitSendQueue(workerConfig.codeExecutionResponseQueue.name, get()) } withOptions {
         named(RESPONSE_QUEUE_QUALIFIER)
-        bind<MessageQueue>()
+        bind<SendQueue>()
     }
 
     single {
