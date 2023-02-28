@@ -150,17 +150,26 @@ class CodeExecutionFlow(
                 delay(config.runner.logsPollIntervalMillis)
             } while (containerStatus.isNotFinal())
         }
-        if (result == null) {
+        val finishedInTime = result != null
+        if (!finishedInTime) {
             docker.killContainer(containerId)
         }
 
-        val inspection = docker.inspectContainer(containerId)
+        val exitCode = docker.inspectContainer(containerId).exitCode!!
         return@withContext CodeExecutionResults(
-            state = if (result == null) FAILED else COMPLETED,
-            failureReason = if (result == null) TIME_LIMIT_EXCEEDED else NONE,
-            exitCode = inspection.exitCode,
+            state = if (!finishedInTime || exitCode != 0) FAILED else COMPLETED,
+            failureReason = failureReasonFrom(finishedInTime, exitCode),
+            exitCode = exitCode,
         )
     }
+
+    private fun failureReasonFrom(finishedInTime: Boolean, exitCode: Int) =
+        if (!finishedInTime)
+            TIME_LIMIT_EXCEEDED
+        else if (exitCode != 0)
+            NON_ZERO_EXIT_CODE
+        else
+            NONE
 
     private suspend fun storeLogs(firstChunk: Boolean, resultsPath: String, logs: ContainerLogsResponse) =
         withContext(Dispatchers.IO) {
@@ -178,7 +187,7 @@ class CodeExecutionFlow(
         }
 
     private suspend fun sendExecutionFinishedEvent(id: CodeExecutionId, results: CodeExecutionResults) {
-        val event = CodeExecutionFinishedEvent(id, now(), results.state, results.exitCode!!, results.failureReason)
+        val event = CodeExecutionFinishedEvent(id, now(), results.state, results.exitCode, results.failureReason)
         responseQueue.sendMessage(Message(encodeCodeExecutionEvent(event)))
     }
 
@@ -201,7 +210,7 @@ class CodeExecutionFlow(
 class CodeExecutionResults(
     val state: CodeExecutionState,
     val failureReason: CodeExecutionFailureReason,
-    val exitCode: Int?,
+    val exitCode: Int,
 )
 
 class CodeExecutionException(message: String) : RuntimeException(message)
