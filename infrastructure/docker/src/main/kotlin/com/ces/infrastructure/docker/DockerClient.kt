@@ -52,7 +52,8 @@ class DockerClient(
             log.debug { "Building image: name=$name" }
             httpClient.execute(request).let { response ->
                 tmpTarFile.delete()
-                response.body.readAllBytes()
+                val body = IOUtils.toString(response.body, UTF_8)
+                log.trace { "Build image response: $body" }
                 return@withContext BuildImageResponse(response.statusCode)
             }
         }

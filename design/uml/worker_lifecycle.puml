@@ -22,11 +22,11 @@ participant Docker        as Docker
 participant ObjectStorage as ObjectStorage
 queue       EventQueue    as EventQueue
 
-TaskQueue -> Worker : Code execution task
-Worker -> ObjectStorage : Fetch source code
 Worker -> Docker : Build image
-Worker -> Docker : Run container
+TaskQueue -> Worker : Code execution task
 Worker -> EventQueue : CodeExecutionStartedEvent
+Worker -> ObjectStorage : Fetch source code
+Worker -> Docker : Run container
 loop logs size and execution time not exceeded
     Worker <-- Docker : Stream logs
     Worker -> ObjectStorage : Store logs
