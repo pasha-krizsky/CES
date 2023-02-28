@@ -87,7 +87,7 @@ data class ContainerLogsResponse(
     val stderr: List<LogChunk>,
     val lastTimestamp: Instant,
 ) : AbstractResponse() {
-    fun allAsText() = all.joinToString { it.content }
+    fun allAsText() = all.joinToString(separator = "") { it.content }
 }
 
 data class InspectContainerResponse(
