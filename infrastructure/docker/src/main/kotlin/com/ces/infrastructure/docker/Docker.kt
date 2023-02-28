@@ -30,7 +30,8 @@ interface Docker {
     suspend fun removeContainer(containerId: ContainerId): RemoveContainerResponse
 }
 
-// TODO the list of params is not full, fix it
+// TODO --storage-opt should be added but it requires some pre-configuration of host (adding pquota to /etc/default/grub)
+// TODO Consider limiting IO OPS for reading from/writing to device
 data class CreateContainerParams(
     val cmd: String,
     val capDrop: String,
@@ -38,8 +39,15 @@ data class CreateContainerParams(
     val networkMode: String,
     val cpusetCpus: String,
     val cpuQuota: Long,
-    val memory: Long,
-    val memorySwap: Long,
+    val memoryBytes: Long,
+    val memorySwapBytes: Long,
+    val kernelMemoryTcpBytes: Long,
+    val pidsLimit: Int,
+    val ipcMode: String,
+    val nofileSoft: Int,
+    val nofileHard: Int,
+    val nprocSoft: Int,
+    val nprocHard: Int,
 )
 
 enum class ContainerStatus {

@@ -16,4 +16,11 @@ class RunnerContainerConfig(
     val cpuQuota: Long,
     val memory: Long,
     val memorySwap: Long,
+    val kernelMemoryTcpBytes: Long,
+    val pidsLimit: Int,
+    val ipcMode: String,
+    val nofileSoft: Int,
+    val nofileHard: Int,
+    val nprocSoft: Int,
+    val nprocHard: Int,
 )
