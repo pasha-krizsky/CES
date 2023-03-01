@@ -45,8 +45,10 @@ class CodeExecutionFlowTest : StringSpec({
 
     lateinit var requestQueueIn: ReceiveQueue
     lateinit var requestQueueOut: SendQueue
+
     lateinit var responseQueueIn: ReceiveQueue
     lateinit var responseQueueOut: SendQueue
+
     lateinit var minioStorage: ObjectStorage
 
     lateinit var flow: CodeExecutionFlow
@@ -55,10 +57,11 @@ class CodeExecutionFlowTest : StringSpec({
 
         requestQueueIn = requestInQueue(connector)
         requestQueueOut = requestOutQueue(connector)
+
         responseQueueIn = responseInQueue(connector)
         responseQueueOut = responseOutQueue(connector)
-        minioStorage = minioStorage()
 
+        minioStorage = minioStorage()
         minioStorage.createBucket(config.codeExecutionBucketName)
 
         createTestImage(runnerDockerfile, runnerEntrypoint)
@@ -72,7 +75,7 @@ class CodeExecutionFlowTest : StringSpec({
             FOUR_SECONDS_SCRIPT to FOUR_SECONDS_SCRIPT_EXPECTED_OUTCOME
         ).forAll { (scriptName, expectedLogs) ->
             val codeExecutionId = CodeExecutionId.random()
-            val storagePath = "${codeExecutionId.value}/source"
+            val storagePath = "${codeExecutionId.value}/$SOURCE_FILE"
             minioStorage.uploadFile(config.codeExecutionBucketName, loadResource(scriptName).absolutePath, storagePath)
 
             val request = CodeExecutionRequestedEvent(codeExecutionId, now(), C_SHARP, MONO, storagePath)
@@ -93,7 +96,7 @@ class CodeExecutionFlowTest : StringSpec({
     }
 })
 
-private suspend fun StringSpec.shouldReceiveCorrectExecutionFinishedEvent(
+private suspend fun shouldReceiveCorrectExecutionFinishedEvent(
     responseQueue: ReceiveQueue,
     codeExecutionId: CodeExecutionId
 ) {
@@ -151,5 +154,6 @@ private const val BASIC_SCRIPT_EXPECTED_OUTCOME = "Hello from runner container"
 private const val FOUR_SECONDS_SCRIPT = "four_seconds_script.cs"
 private const val FOUR_SECONDS_SCRIPT_EXPECTED_OUTCOME = "line 0\nline 1\nline 2\nline 3\n"
 
+private const val SOURCE_FILE = "source"
 private const val RESULTS_FILE = "results"
 private const val DOWNLOADED_SUFFIX = "_downloaded"

@@ -1,9 +1,10 @@
 package com.ces.server.listener
 
+import com.ces.domain.entities.CodeExecution
 import com.ces.domain.events.CodeExecutionEvent
 import com.ces.domain.events.CodeExecutionFinishedEvent
 import com.ces.domain.events.CodeExecutionStartedEvent
-import com.ces.domain.json.JsonConfig
+import com.ces.domain.json.JsonConfig.Companion.decodeCodeExecutionEvent
 import com.ces.domain.types.CodeExecutionState.STARTED
 import com.ces.infrastructure.rabbitmq.DeliveryId
 import com.ces.infrastructure.rabbitmq.ReceiveQueue
@@ -34,7 +35,7 @@ class CodeExecutionEventsListener(
 
     private suspend inline fun fetchCodeExecutionEvent(): Pair<DeliveryId, CodeExecutionEvent> {
         val message = responseQueue.receiveMessage()
-        val event = JsonConfig.decodeCodeExecutionEvent(message.content)
+        val event = decodeCodeExecutionEvent(message.content)
         return Pair(message.deliveryId, event)
     }
 
@@ -53,8 +54,8 @@ class CodeExecutionEventsListener(
             state = STARTED
             executionLogsPath = event.executionLogsPath
         }.build()
-        log.debug { "Upsert code execution: $updated" }
-        database.upsert(updated)
+
+        upsert(updated)
     }
 
     private suspend fun processFinishedEvent(event: CodeExecutionFinishedEvent) {
@@ -66,7 +67,12 @@ class CodeExecutionEventsListener(
             failureReason = event.failureReason
             finishedAt = event.createdAt
         }.build()
-        log.debug { "Upsert code execution: $updated" }
-        database.upsert(updated)
+
+        upsert(updated)
+    }
+
+    private suspend fun upsert(codeExecution: CodeExecution) {
+        log.debug { "Upsert code execution: $codeExecution" }
+        database.upsert(codeExecution)
     }
 }

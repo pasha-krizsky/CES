@@ -26,7 +26,7 @@ val config = ServerConfig.from(HoconApplicationConfig(ConfigFactory.load()))
 class CodeExecutionEventsListenerTest : StringSpec({
     extension(RabbitmqExtension())
 
-    lateinit var connector: RabbitmqConnector
+    lateinit var rabbitConnector: RabbitmqConnector
 
     lateinit var responseQueueOut: SendQueue
     lateinit var responseQueueIn: ReceiveQueue
@@ -34,10 +34,10 @@ class CodeExecutionEventsListenerTest : StringSpec({
     lateinit var listener: CodeExecutionEventsListener
 
     beforeSpec {
-        connector = RabbitmqConnector(config.rabbitmq)
+        rabbitConnector = RabbitmqConnector(config.rabbitmq)
 
-        responseQueueIn = responseInQueue(connector)
-        responseQueueOut = responseOutQueue(connector)
+        responseQueueIn = responseInQueue(rabbitConnector)
+        responseQueueOut = responseOutQueue(rabbitConnector)
         database = CodeExecutionInMemoryDao()
         listener = CodeExecutionEventsListener(responseQueueIn, database)
     }

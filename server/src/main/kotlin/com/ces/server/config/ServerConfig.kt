@@ -21,26 +21,23 @@ class ServerConfig(
                 port = intProperty(config, RABBITMQ_PORT),
             )
             val codeExecutionRequestQueue = QueueConfig(
-                stringProperty(config, CODE_EXECUTION_REQUEST_QUEUE_NAME),
-                intProperty(config, CODE_EXECUTION_REQUEST_QUEUE_PREFETCH),
+                name = stringProperty(config, CODE_EXECUTION_REQUEST_QUEUE_NAME)
             )
             val codeExecutionResponseQueue = QueueConfig(
-                stringProperty(config, CODE_EXECUTION_RESPONSE_QUEUE_NAME),
-                intProperty(config, CODE_EXECUTION_RESPONSE_QUEUE_PREFETCH),
+                name = stringProperty(config, CODE_EXECUTION_RESPONSE_QUEUE_NAME),
+                prefetchCount = intProperty(config, CODE_EXECUTION_RESPONSE_QUEUE_PREFETCH),
             )
             val minio = MinioConfig(
-                stringProperty(config, MINIO_ENDPOINT),
-                stringProperty(config, MINIO_ACCESS_KEY),
-                stringProperty(config, MINIO_SECRET_KEY),
+                endpoint = stringProperty(config, MINIO_ENDPOINT),
+                accessKey = stringProperty(config, MINIO_ACCESS_KEY),
+                secretKey = stringProperty(config, MINIO_SECRET_KEY),
             )
-            val codeExecutionBucketName = stringProperty(config, BUCKET_NAME)
-
             return ServerConfig(
                 rabbitmq = rabbitmq,
                 codeExecutionRequestQueue = codeExecutionRequestQueue,
                 codeExecutionResponseQueue = codeExecutionResponseQueue,
                 minio = minio,
-                codeExecutionBucketName = codeExecutionBucketName,
+                codeExecutionBucketName = stringProperty(config, BUCKET_NAME),
             )
         }
 
@@ -56,8 +53,6 @@ class ServerConfig(
         private const val RABBITMQ_PORT = "rabbitmq.port"
 
         private const val CODE_EXECUTION_REQUEST_QUEUE_NAME = "codeExecutionRequestQueue.name"
-        private const val CODE_EXECUTION_REQUEST_QUEUE_PREFETCH = "codeExecutionRequestQueue.prefetchCount"
-
         private const val CODE_EXECUTION_RESPONSE_QUEUE_NAME = "codeExecutionResponseQueue.name"
         private const val CODE_EXECUTION_RESPONSE_QUEUE_PREFETCH = "codeExecutionResponseQueue.prefetchCount"
 

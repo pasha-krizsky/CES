@@ -25,21 +25,21 @@ should not take a lot of effort given the current architecture.
 
 ### REST API
 This is a high-level description of the API, so some details are omitted.
-- *POST /code-execution*. 
+- `POST /code-execution`. 
 Submits source code for its execution.
-The request body contains *language*, *compiler* and *sourceCode* parameters.
-Returns *id* of execution that can be used later to check its status and return results.
-- *GET /code-execution/:id*.
+The request body contains `language`, `compiler` and `sourceCode` parameters.
+Returns `id` of code execution that can be used later to check its status and return results.
+- `GET /code-execution/{id}`.
 Returns code execution status and some other information.
-- *GET /code-execution/:id/logs*. 
+- `GET /code-execution/{id}/logs`. 
 Returns code execution logs.
 Current implementation returns all logs.
-Then it can be improved in several ways.
-  - Pagination (e.g. by adding *fromPage* request parameter and *nextPage*
+It can be improved in several ways.
+  - Pagination (e.g. by adding `fromPage` request parameter and `nextPage`
     response field). 
-  - stdout and stderr streams can be separated.
-  - Parsing the results (e.g. detecting compilation issues, etc.).
-  - Tail results, filter by date.
+  - Filter response by `stdout` and `stderr` streams.
+  - More intelligent response parsing (e.g. detecting common compilation issues, etc.).
+  - Tailing the results, filter by date.
 
 ### Technologies
 - **Kotlin** (for writing *Server* and *Worker* component's code)

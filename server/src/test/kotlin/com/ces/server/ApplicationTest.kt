@@ -43,13 +43,13 @@ class ApplicationTest : StringSpec({
     extension(MinioExtension(config.minio.accessKey, config.minio.secretKey))
     extension(RabbitmqExtension())
 
-    lateinit var connector: RabbitmqConnector
+    lateinit var rabbitConnector: RabbitmqConnector
     lateinit var requestQueue: ReceiveQueue
     lateinit var minioStorage: ObjectStorage
 
     beforeSpec {
-        connector = RabbitmqConnector(config.rabbitmq)
-        requestQueue = requestQueue(connector)
+        rabbitConnector = RabbitmqConnector(config.rabbitmq)
+        requestQueue = requestQueue(rabbitConnector)
         minioStorage = minioStorage()
 
         minioStorage.createBucket(config.codeExecutionBucketName)
@@ -66,7 +66,9 @@ class ApplicationTest : StringSpec({
                 contentType(ContentType.Application.Json)
                 setBody(Json.encodeToString(request))
             }
+
             response.status shouldBe Accepted
+
             val createdResponse = Json.decodeFromString<CodeExecutionCreatedResponse>(response.bodyAsText())
             val codeExecutionId = createdResponse.id
             val resultPath = tempdir().absolutePath + "_tmp"
@@ -74,6 +76,7 @@ class ApplicationTest : StringSpec({
                 minioStorage.downloadFile(config.codeExecutionBucketName, "${codeExecutionId.value}/source", resultPath)
 
             sourceCode.readText() shouldBe "source code"
+
             val message = requestQueue.receiveMessage()
             requestQueue.markProcessed(message.deliveryId)
             val requestedEvent = decodeCodeExecutionEvent(message.content)
@@ -90,7 +93,9 @@ class ApplicationTest : StringSpec({
                 contentType(ContentType.Application.Json)
                 setBody(Json.encodeToString(request))
             }
+
             response.status shouldBe Accepted
+
             val createdResponse = Json.decodeFromString<CodeExecutionCreatedResponse>(response.bodyAsText())
             val codeExecutionId = createdResponse.id
             val result = client.get("/code-execution/${codeExecutionId.value}")

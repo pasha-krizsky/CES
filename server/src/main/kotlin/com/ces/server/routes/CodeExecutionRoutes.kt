@@ -20,6 +20,10 @@ import org.koin.ktor.ext.inject
 import java.io.File
 import java.io.File.separator
 import java.util.*
+import java.util.UUID.randomUUID
+
+@Serializable
+data class CodeExecutionCreatedResponse(val id: CodeExecutionId)
 
 fun Route.codeExecutionRouting() {
     val database by inject<CodeExecutionDao>()
@@ -32,9 +36,7 @@ fun Route.codeExecutionRouting() {
             val id = call.parameters["id"] ?: return@get call.respondText(MISSING_ID_PARAMETER, status = BadRequest)
 
             try {
-                val codeExecutionId = CodeExecutionId(UUID.fromString(id))
-                val codeExecution = database.get(codeExecutionId)
-
+                val codeExecution = fetchCodeExecution(id, database)
                 call.respond(CodeExecutionView.from(codeExecution))
             } catch (e: IllegalArgumentException) {
                 call.respondText(WRONG_ID_FORMAT, status = BadRequest)
@@ -44,14 +46,11 @@ fun Route.codeExecutionRouting() {
             val id = call.parameters["id"] ?: return@get call.respondText(MISSING_ID_PARAMETER, status = BadRequest)
 
             try {
-                val codeExecutionId = CodeExecutionId(UUID.fromString(id))
-                val codeExecution = database.get(codeExecutionId)
-
+                val codeExecution = fetchCodeExecution(id, database)
                 if (codeExecution.executionLogsPath == null)
                     throw NotFoundException("Execution logs not found")
 
                 val logs = downloadLogs(config, codeExecution, storage)
-
                 call.respondFile(logs)
                 logs.delete()
             } catch (e: IllegalArgumentException) {
@@ -66,14 +65,16 @@ fun Route.codeExecutionRouting() {
     }
 }
 
+private suspend fun fetchCodeExecution(id: String, database: CodeExecutionDao): CodeExecution {
+    val codeExecutionId = CodeExecutionId(UUID.fromString(id))
+    return database.get(codeExecutionId)
+}
+
 private suspend fun downloadLogs(config: ServerConfig, codeExecution: CodeExecution, storage: ObjectStorage): File {
-    val tmpLocalDestination = TMP_DIR + separator + UUID.randomUUID()
+    val tmpLocalDestination = tmpDir + separator + randomUUID()
     return storage.downloadFile(config.codeExecutionBucketName, codeExecution.executionLogsPath!!, tmpLocalDestination)
 }
 
 private const val MISSING_ID_PARAMETER = "Missing id parameter"
 private const val WRONG_ID_FORMAT = "Failed to parse id parameter to UUID format"
-private val TMP_DIR: String = System.getProperty("java.io.tmpdir")
-
-@Serializable
-data class CodeExecutionCreatedResponse(val id: CodeExecutionId)
+private val tmpDir: String = System.getProperty("java.io.tmpdir")

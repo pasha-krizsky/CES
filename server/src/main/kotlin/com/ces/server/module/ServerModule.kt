@@ -36,7 +36,6 @@ val serverModule = module {
     single {
         RabbitmqConnector(serverConfig.rabbitmq)
     }
-
     single { RabbitSendQueue(serverConfig.codeExecutionRequestQueue.name, get()) } withOptions {
         named(REQUEST_QUEUE_QUALIFIER)
         bind<SendQueue>()

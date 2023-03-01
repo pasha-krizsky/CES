@@ -5,7 +5,7 @@ import com.ces.domain.types.CodeExecutionId
 import io.ktor.server.plugins.*
 import java.util.concurrent.ConcurrentHashMap
 
-// TODO Consider using real database
+// TODO Consider using real database for data persistence
 class CodeExecutionInMemoryDao : CodeExecutionDao {
 
     private val database = ConcurrentHashMap<CodeExecutionId, CodeExecution>()

@@ -19,7 +19,7 @@ class Bootstrap(
     private val log = KotlinLogging.logger {}
 
     suspend fun start() {
-        log.info { "Building runner images, it might take a while if the image is not cached..." }
+        log.info { "Building runner image, it might take a while if the image is not cached..." }
         buildRunnerImage()
         log.info { "Worker is ready" }
         while (true) {
@@ -51,6 +51,6 @@ class Bootstrap(
         private const val DOCKERFILE = "Dockerfile"
         private const val ENTRY_POINT = "entrypoint.sh"
 
-        val TMP_DIR: String = System.getProperty("java.io.tmpdir")
+        private val TMP_DIR: String = System.getProperty("java.io.tmpdir")
     }
 }
