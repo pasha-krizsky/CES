@@ -4,7 +4,7 @@ import com.ces.domain.entities.CodeExecution
 import com.ces.domain.types.CodeExecutionId
 import com.ces.infrastructure.minio.ObjectStorage
 import com.ces.server.config.ServerConfig
-import com.ces.server.flow.CodeExecutionCreateFlow
+import com.ces.server.flow.CodeExecutionSubmitFlow
 import com.ces.server.models.CodeExecutionRequest
 import com.ces.server.models.CodeExecutionView
 import com.ces.server.storage.CodeExecutionDao
@@ -27,7 +27,7 @@ data class CodeExecutionCreatedResponse(val id: CodeExecutionId)
 
 fun Route.codeExecutionRouting() {
     val database by inject<CodeExecutionDao>()
-    val codeExecutionCreateFlow by inject<CodeExecutionCreateFlow>()
+    val codeExecutionSubmitFlow by inject<CodeExecutionSubmitFlow>()
     val storage by inject<ObjectStorage>()
     val config by inject<ServerConfig>()
 
@@ -59,7 +59,7 @@ fun Route.codeExecutionRouting() {
         }
         post {
             val request = call.receive<CodeExecutionRequest>()
-            val codeExecution = codeExecutionCreateFlow.run(request)
+            val codeExecution = codeExecutionSubmitFlow.run(request)
             call.respond(status = Accepted, CodeExecutionCreatedResponse(codeExecution.id))
         }
     }

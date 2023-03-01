@@ -15,7 +15,7 @@ import kotlinx.datetime.Clock.System.now
 import java.io.File
 import java.io.File.separator
 
-class CodeExecutionCreateFlow(
+class CodeExecutionSubmitFlow(
     private val config: ServerConfig,
     private val database: CodeExecutionDao,
     private val storage: ObjectStorage,
@@ -38,7 +38,7 @@ class CodeExecutionCreateFlow(
         requestQueue.sendMessage(Message(encodeCodeExecutionEvent(event)))
 
         val codeExecution = CodeExecution(
-            id = codeExecutionId,
+            codeExecutionId,
             now(),
             CREATED,
             storagePath,

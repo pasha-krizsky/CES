@@ -50,7 +50,7 @@ class CodeExecutionEventsListenerTest : StringSpec({
         responseQueueOut.sendMessage(Message(encodeCodeExecutionEvent(startedEvent)))
 
         val listenerJob = launch {
-            listener.run()
+            listener.start()
         }
 
         eventually(5.seconds) {
@@ -70,7 +70,7 @@ class CodeExecutionEventsListenerTest : StringSpec({
         responseQueueOut.sendMessage(Message(encodeCodeExecutionEvent(completedEvent)))
 
         val listenerJob = launch {
-            listener.run()
+            listener.start()
         }
 
         eventually(5.seconds) {
@@ -92,7 +92,7 @@ class CodeExecutionEventsListenerTest : StringSpec({
         responseQueueOut.sendMessage(Message(encodeCodeExecutionEvent(failedEvent)))
 
         val listenerJob = launch {
-            listener.run()
+            listener.start()
         }
 
         eventually(5.seconds) {

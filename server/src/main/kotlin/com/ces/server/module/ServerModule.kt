@@ -4,7 +4,7 @@ import com.ces.infrastructure.minio.MinioStorage
 import com.ces.infrastructure.minio.ObjectStorage
 import com.ces.infrastructure.rabbitmq.*
 import com.ces.server.config.ServerConfig
-import com.ces.server.flow.CodeExecutionCreateFlow
+import com.ces.server.flow.CodeExecutionSubmitFlow
 import com.ces.server.listener.CodeExecutionEventsListener
 import com.ces.server.storage.CodeExecutionDao
 import com.ces.server.storage.CodeExecutionInMemoryDao
@@ -18,6 +18,7 @@ import org.koin.core.module.dsl.withOptions
 import org.koin.core.qualifier.named
 import org.koin.dsl.bind
 import org.koin.dsl.module
+import org.koin.dsl.onClose
 
 // TODO Consider splitting this module into submodules as application grows
 val serverModule = module {
@@ -32,9 +33,10 @@ val serverModule = module {
     }
     singleOf(::MinioStorage) bind ObjectStorage::class
 
-
     single {
         RabbitmqConnector(serverConfig.rabbitmq)
+    } onClose {
+        it?.close()
     }
     single { RabbitSendQueue(serverConfig.codeExecutionRequestQueue.name, get()) } withOptions {
         named(REQUEST_QUEUE_QUALIFIER)
@@ -51,10 +53,10 @@ val serverModule = module {
         bind<ReceiveQueue>()
     }
 
-    singleOf(::CodeExecutionInMemoryDao) bind CodeExecutionDao::class
+    single { CodeExecutionInMemoryDao() } withOptions { bind<CodeExecutionDao>() }
 
     single {
-        CodeExecutionCreateFlow(
+        CodeExecutionSubmitFlow(
             get(),
             get(),
             get(),

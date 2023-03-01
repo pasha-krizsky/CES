@@ -145,15 +145,15 @@ class CodeExecutionFlow(
         containerId: ContainerId
     ): CodeExecutionResults = withContext(Dispatchers.IO) {
         val result = withTimeoutOrNull(config.runner.codeExecutionTimeoutMillis) {
-            var since = EPOCH
+            var after = EPOCH
             do {
                 val inspection = docker.inspectContainer(containerId)
                 val containerStatus = inspection.containerStatus
-                val newLogs = docker.containerLogs(containerId, since)
+                val newLogs = docker.containerLogs(containerId, after)
 
-                storeLogs(since == EPOCH, resultsPath, newLogs)
+                storeLogs(after == EPOCH, resultsPath, newLogs)
 
-                since = newLogs.lastTimestamp
+                after = newLogs.lastTimestamp
                 delay(config.runner.logsPollIntervalMillis)
             } while (containerStatus.isNotFinal())
         }

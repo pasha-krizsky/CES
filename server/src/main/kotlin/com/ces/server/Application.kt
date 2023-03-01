@@ -11,12 +11,10 @@ import io.ktor.server.application.*
 import io.ktor.server.config.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.routing.*
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import org.koin.ktor.ext.inject
 import org.koin.ktor.plugin.Koin
+import org.koin.ktor.plugin.KoinApplicationStopPreparing
 import org.koin.logger.slf4jLogger
 
 fun main(args: Array<String>): Unit =
@@ -39,7 +37,13 @@ fun Application.module() = runBlocking {
     configureSerialization()
     configureRouting()
 
-    GlobalScope.launch {
-        listener.run()
+    val listenerJob = GlobalScope.launch { listener.start() }
+    environment.monitor.subscribe(KoinApplicationStopPreparing) { stop(listenerJob) }
+}
+
+private fun stop(listenerJob: Job): Unit = runBlocking {
+    try {
+        listenerJob.cancelAndJoin()
+    } catch (_: CancellationException) {
     }
 }

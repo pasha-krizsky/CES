@@ -19,6 +19,7 @@ import org.koin.core.module.dsl.withOptions
 import org.koin.core.qualifier.named
 import org.koin.dsl.bind
 import org.koin.dsl.module
+import org.koin.dsl.onClose
 import java.net.URI
 import java.time.Duration
 
@@ -50,6 +51,8 @@ val workerModule = module {
 
     single {
         RabbitmqConnector(workerConfig.rabbitmq)
+    } onClose {
+        it?.close()
     }
 
     single {

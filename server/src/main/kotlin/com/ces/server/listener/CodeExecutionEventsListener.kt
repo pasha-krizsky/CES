@@ -18,7 +18,7 @@ class CodeExecutionEventsListener(
 
     private val log = KotlinLogging.logger {}
 
-    suspend fun run() {
+    suspend fun start() {
         while (true) {
             val (messageId, request) = fetchCodeExecutionEvent()
             log.debug { "Start processing code execution event, messageId=$messageId" }
@@ -50,25 +50,25 @@ class CodeExecutionEventsListener(
     private suspend fun processStartedEvent(event: CodeExecutionStartedEvent) {
         val codeExecutionId = event.id
         val codeExecution = database.get(codeExecutionId)
-        val updated = codeExecution.copy().apply {
+        val updatedCodeExecution = codeExecution.copy().apply {
             state = STARTED
             executionLogsPath = event.executionLogsPath
         }.build()
 
-        upsert(updated)
+        upsert(updatedCodeExecution)
     }
 
     private suspend fun processFinishedEvent(event: CodeExecutionFinishedEvent) {
         val codeExecutionId = event.id
         val codeExecution = database.get(codeExecutionId)
-        val updated = codeExecution.copy().apply {
+        val updatedCodeExecution = codeExecution.copy().apply {
             state = event.state
             exitCode = event.exitCode
             failureReason = event.failureReason
             finishedAt = event.createdAt
         }.build()
 
-        upsert(updated)
+        upsert(updatedCodeExecution)
     }
 
     private suspend fun upsert(codeExecution: CodeExecution) {

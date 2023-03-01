@@ -72,6 +72,8 @@ class DomainTestData {
 
         fun aProgrammingLanguage() = ProgrammingLanguage.values().toList().shuffled()[0]
         fun aCompiler() = CodeCompilerType.values().toList().shuffled()[0]
+        fun aSourceCode(): String = randomAlphabetic(1000)
+        fun aResultLogs(): String = randomAlphabetic(1000)
         private fun aCodeExecutionState() = CodeExecutionState.values().toList().shuffled()[0]
         fun anExitCode() = Random.nextInt(0, 100)
         fun aFailureReason() = CodeExecutionFailureReason.values().filter { it != NONE }.shuffled()[0]
