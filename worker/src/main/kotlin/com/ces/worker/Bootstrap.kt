@@ -4,6 +4,7 @@ import com.ces.infrastructure.docker.Docker
 import com.ces.worker.config.WorkerConfig
 import com.ces.worker.flow.CodeExecutionFlow
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mu.KotlinLogging
 import java.io.File
@@ -18,12 +19,17 @@ class Bootstrap(
 
     private val log = KotlinLogging.logger {}
 
-    suspend fun start() {
+    suspend fun start() = withContext(Dispatchers.Default) {
         log.info { "Building runner image, it might take a while if the image is not cached..." }
         buildRunnerImage()
         log.info { "Worker is ready" }
-        while (true) {
-            codeExecutionFlow.run()
+
+        repeat(config.maxConcurrentExecutions) {
+            launch {
+                while (true) {
+                    codeExecutionFlow.run()
+                }
+            }
         }
     }
 
@@ -31,8 +37,8 @@ class Bootstrap(
         val dockerfile = loadResource(DOCKERFILE)
         val entrypoint = loadResource(ENTRY_POINT)
 
-        val tmpDockerfile = File(TMP_DIR + separator + DOCKERFILE)
-        val tmpEntrypoint = File(TMP_DIR + separator + ENTRY_POINT)
+        val tmpDockerfile = File(WorkerConfig.tmpDir + separator + DOCKERFILE)
+        val tmpEntrypoint = File(WorkerConfig.tmpDir + separator + ENTRY_POINT)
 
         tmpDockerfile.writeBytes(dockerfile.readAllBytes())
         tmpEntrypoint.writeBytes(entrypoint.readAllBytes())
@@ -50,7 +56,5 @@ class Bootstrap(
     companion object {
         private const val DOCKERFILE = "Dockerfile"
         private const val ENTRY_POINT = "entrypoint.sh"
-
-        private val TMP_DIR: String = System.getProperty("java.io.tmpdir")
     }
 }

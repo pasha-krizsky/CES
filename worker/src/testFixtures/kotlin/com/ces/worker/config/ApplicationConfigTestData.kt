@@ -2,6 +2,7 @@ package com.ces.worker.config
 
 import com.ces.infrastructure.docker.DockerTestData.Companion.CODE_EXECUTION_TIMEOUT_MILLIS
 import com.ces.infrastructure.docker.DockerTestData.Companion.LOGS_POLL_INTERVAL_MILLIS
+import com.ces.infrastructure.docker.DockerTestData.Companion.MAX_CONCURRENT_EXECUTIONS
 import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_CAP_DROP
 import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_CGROUPNS_MODE
 import com.ces.infrastructure.docker.DockerTestData.Companion.RUNNER_CPUSET_CPUS
@@ -24,7 +25,6 @@ import com.ces.infrastructure.minio.MinioTestData.Companion.MINIO_CODE_EXECUTION
 import com.ces.infrastructure.minio.MinioTestData.Companion.MINIO_ENDPOINT
 import com.ces.infrastructure.minio.MinioTestData.Companion.MINIO_SECRET_KEY
 import com.ces.infrastructure.rabbitmq.RabbitmqTestData.Companion.CODE_EXECUTION_REQUEST_QUEUE_NAME
-import com.ces.infrastructure.rabbitmq.RabbitmqTestData.Companion.CODE_EXECUTION_REQUEST_QUEUE_PREFETCH
 import com.ces.infrastructure.rabbitmq.RabbitmqTestData.Companion.CODE_EXECUTION_RESPONSE_QUEUE_NAME
 import com.ces.infrastructure.rabbitmq.RabbitmqTestData.Companion.CODE_EXECUTION_RESPONSE_QUEUE_PREFETCH
 import com.ces.infrastructure.rabbitmq.RabbitmqTestData.Companion.RABBIT_MQ_HOST
@@ -38,6 +38,7 @@ class ApplicationConfigTestData {
 
     companion object {
         fun applicationConfig() = WorkerConfig(
+            MAX_CONCURRENT_EXECUTIONS,
             runner = RunnerConfig(
                 imageName = RUNNER_TEST_IMAGE_NAME,
                 workDir = RUNNER_HOME_DIR,
@@ -69,7 +70,7 @@ class ApplicationConfigTestData {
             ),
             codeExecutionRequestQueue = QueueConfig(
                 name = CODE_EXECUTION_REQUEST_QUEUE_NAME,
-                prefetchCount = CODE_EXECUTION_REQUEST_QUEUE_PREFETCH,
+                prefetchCount = MAX_CONCURRENT_EXECUTIONS,
             ),
             codeExecutionResponseQueue = QueueConfig(
                 name = CODE_EXECUTION_RESPONSE_QUEUE_NAME,

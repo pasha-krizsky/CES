@@ -12,7 +12,11 @@ class ServerConfig(
     val minio: MinioConfig,
     val codeExecutionBucketName: String,
 ) {
+
     companion object {
+
+        val tmpDir: String = System.getProperty("java.io.tmpdir")
+
         fun from(config: HoconApplicationConfig): ServerConfig {
             val rabbitmq = RabbitmqConfig(
                 user = stringProperty(config, RABBITMQ_USER),

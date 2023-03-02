@@ -95,7 +95,7 @@ class CodeExecutionFlow(
     }
 
     private suspend inline fun downloadSourceCode(id: CodeExecutionId, scriptRemotePath: String): File {
-        val localDestination = WORKER_TMP_DIR + separator + id.value
+        val localDestination = WorkerConfig.tmpDir + separator + id.value
         storage.downloadFile(config.codeExecutionBucketName, scriptRemotePath, localDestination)
         return File(localDestination)
     }
@@ -196,7 +196,7 @@ class CodeExecutionFlow(
 
     private suspend fun storeLogs(firstChunk: Boolean, logsContent: String, path: String) =
         withContext(Dispatchers.IO) {
-            val tmpLocalPath = WORKER_TMP_DIR + separator + randomUUID()
+            val tmpLocalPath = WorkerConfig.tmpDir + separator + randomUUID()
             val file = if (!firstChunk)
                 storage.downloadFile(config.codeExecutionBucketName, path, tmpLocalPath)
             else File(tmpLocalPath)
@@ -229,7 +229,6 @@ class CodeExecutionFlow(
 
     companion object {
         const val TAR_SUFFIX: String = "_tar"
-        val WORKER_TMP_DIR: String = System.getProperty("java.io.tmpdir")
     }
 }
 

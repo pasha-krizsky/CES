@@ -27,7 +27,7 @@ class CodeExecutionSubmitFlow(
 
         val codeExecutionId = CodeExecutionId.random()
 
-        val tmpLocalPath = TMP_DIR + separator + codeExecutionId.value
+        val tmpLocalPath = ServerConfig.tmpDir + separator + codeExecutionId.value
         val tmpLocalFile = File(tmpLocalPath)
         tmpLocalFile.appendText(request.sourceCode)
 
@@ -49,9 +49,5 @@ class CodeExecutionSubmitFlow(
 
         database.upsert(codeExecution)
         return codeExecution
-    }
-
-    companion object {
-        private val TMP_DIR: String = System.getProperty("java.io.tmpdir")
     }
 }

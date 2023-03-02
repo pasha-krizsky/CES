@@ -56,7 +56,7 @@ fun Route.codeExecutionRouting() {
             try {
                 val codeExecution = fetchCodeExecution(id, database)
                 if (codeExecution.logsPath == null)
-                    throw NotFoundException("Execution logs not found")
+                    throw NotFoundException(LOGS_NOT_FOUND_ERROR)
 
                 val logs = downloadLogs(config, codeExecution, storage, stdout, stderr)
                 call.respondFile(logs)
@@ -85,7 +85,7 @@ private suspend fun downloadLogs(
     stdout: Boolean,
     stderr: Boolean,
 ): File {
-    val tmpLocalDestination = tmpDir + separator + randomUUID()
+    val tmpLocalDestination = ServerConfig.tmpDir + separator + randomUUID()
     val logs = codeExecution.logsPath!!
     val logsPath = if (stdout && stderr) logs.allPath else if (stdout) logs.stdoutPath else logs.stderrPath
     return storage.downloadFile(
@@ -98,4 +98,4 @@ private suspend fun downloadLogs(
 private const val MISSING_ID_PARAMETER_ERROR = "Missing id parameter"
 private const val WRONG_ID_FORMAT_ERROR = "Failed to parse id parameter to UUID format"
 private const val MISSING_LOGS_STREAM_ERROR = "At least one 'stdout' or 'stderr' query parameter must be set to true"
-private val tmpDir: String = System.getProperty("java.io.tmpdir")
+private const val LOGS_NOT_FOUND_ERROR = "Execution logs not found"

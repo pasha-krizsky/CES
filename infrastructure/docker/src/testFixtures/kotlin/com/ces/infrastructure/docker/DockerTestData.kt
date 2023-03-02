@@ -14,6 +14,8 @@ import java.time.Duration
 class DockerTestData {
 
     companion object {
+        const val MAX_CONCURRENT_EXECUTIONS = 10
+
         const val RUNNER_TEST_IMAGE_NAME = "test-runner-image"
         const val RUNNER_HOME_DIR = "/home/runner"
         const val CODE_EXECUTION_TIMEOUT_MILLIS = 5_000L

@@ -87,9 +87,8 @@ class CodeExecutionFlowTest : StringSpec({
         testData.forAll { test ->
             val codeExecutionId = CodeExecutionId.random()
             val storagePath = "${codeExecutionId.value}/$SOURCE_FILE_NAME"
-            val tmpSourceFile = tempfile()
-            tmpSourceFile.appendText(test.source)
-            minioStorage.uploadFile(config.codeExecutionBucketName, tmpSourceFile.absolutePath, storagePath)
+
+            uploadSourceCode(minioStorage, test.source, storagePath)
 
             val request = CodeExecutionRequestedEvent(codeExecutionId, now(), C_SHARP, MONO, storagePath)
             requestQueueOut.sendMessage(Message(encodeCodeExecutionEvent(request)))
@@ -116,9 +115,8 @@ class CodeExecutionFlowTest : StringSpec({
         val sourceCode = loadResource(TLE_ERROR_RESOURCE).readText()
         val codeExecutionId = CodeExecutionId.random()
         val storagePath = "${codeExecutionId.value}/$SOURCE_FILE_NAME"
-        val tmpSourceFile = tempfile()
-        tmpSourceFile.appendText(sourceCode)
-        minioStorage.uploadFile(config.codeExecutionBucketName, tmpSourceFile.absolutePath, storagePath)
+
+        uploadSourceCode(minioStorage, sourceCode, storagePath)
 
         val request = CodeExecutionRequestedEvent(codeExecutionId, now(), C_SHARP, MONO, storagePath)
         requestQueueOut.sendMessage(Message(encodeCodeExecutionEvent(request)))
@@ -143,9 +141,8 @@ class CodeExecutionFlowTest : StringSpec({
         val sourceCode = loadResource(NON_ZERO_EXIT_CODE_ERROR_RESOURCE).readText()
         val codeExecutionId = CodeExecutionId.random()
         val storagePath = "${codeExecutionId.value}/$SOURCE_FILE_NAME"
-        val tmpSourceFile = tempfile()
-        tmpSourceFile.appendText(sourceCode)
-        minioStorage.uploadFile(config.codeExecutionBucketName, tmpSourceFile.absolutePath, storagePath)
+
+        uploadSourceCode(minioStorage, sourceCode, storagePath)
 
         val request = CodeExecutionRequestedEvent(codeExecutionId, now(), C_SHARP, MONO, storagePath)
         requestQueueOut.sendMessage(Message(encodeCodeExecutionEvent(request)))
@@ -166,6 +163,16 @@ class CodeExecutionFlowTest : StringSpec({
         responseQueueIn.markProcessed(finishedResponse.deliveryId)
     }
 })
+
+private suspend fun StringSpec.uploadSourceCode(
+    storage: ObjectStorage,
+    sourceCode: String,
+    storagePath: String
+) {
+    val tmpFile = tempfile()
+    tmpFile.appendText(sourceCode)
+    storage.uploadFile(config.codeExecutionBucketName, tmpFile.absolutePath, storagePath)
+}
 
 private fun shouldHaveCorrectLogsPath(startedEvent: CodeExecutionStartedEvent) {
     val id = startedEvent.id

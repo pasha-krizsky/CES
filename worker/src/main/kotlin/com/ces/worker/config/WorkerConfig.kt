@@ -6,6 +6,7 @@ import com.ces.infrastructure.rabbitmq.config.RabbitmqConfig
 import com.typesafe.config.Config
 
 class WorkerConfig(
+    val maxConcurrentExecutions: Int,
     val runner: RunnerConfig,
     val rabbitmq: RabbitmqConfig,
     val codeExecutionRequestQueue: QueueConfig,
@@ -14,6 +15,9 @@ class WorkerConfig(
     val codeExecutionBucketName: String,
 ) {
     companion object {
+
+        val tmpDir: String = System.getProperty("java.io.tmpdir")
+
         fun from(config: Config): WorkerConfig {
             val runner = RunnerConfig(
                 imageName = stringProperty(config, RUNNER_IMAGE_NAME),
@@ -37,7 +41,6 @@ class WorkerConfig(
                     nprocHard = intProperty(config, NPROC_HARD),
                 )
             )
-            val codeExecutionBucketName = stringProperty(config, BUCKET_NAME)
             val rabbitmq = RabbitmqConfig(
                 user = stringProperty(config, RABBITMQ_USER),
                 password = stringProperty(config, RABBITMQ_PASSWORD),
@@ -59,11 +62,12 @@ class WorkerConfig(
             )
 
             return WorkerConfig(
+                maxConcurrentExecutions = intProperty(config, MAX_CONCURRENT_EXECUTIONS),
                 rabbitmq = rabbitmq,
                 codeExecutionRequestQueue = codeExecutionRequestQueue,
                 codeExecutionResponseQueue = codeExecutionResponseQueue,
                 minio = minio,
-                codeExecutionBucketName = codeExecutionBucketName,
+                codeExecutionBucketName = stringProperty(config, BUCKET_NAME),
                 runner = runner,
             )
         }
@@ -71,6 +75,8 @@ class WorkerConfig(
         private fun stringProperty(hocon: Config, name: String) = hocon.getString(name)
         private fun intProperty(hocon: Config, name: String) = stringProperty(hocon, name).toInt()
         private fun longProperty(hocon: Config, name: String) = stringProperty(hocon, name).toLong()
+
+        private const val MAX_CONCURRENT_EXECUTIONS = "maxConcurrentExecutions"
 
         private const val RUNNER_IMAGE_NAME = "runner.imageName"
         private const val RUNNER_WORK_DIR = "runner.workDir"
