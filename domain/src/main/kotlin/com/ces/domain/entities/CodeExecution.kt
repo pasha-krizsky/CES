@@ -16,7 +16,7 @@ data class CodeExecution(
 
     val finishedAt: Instant? = null,
     val exitCode: Int? = null,
-    val executionLogsPath: String? = null,
+    val logsPath: CodeExecutionLogsPath? = null,
     val failureReason: CodeExecutionFailureReason = NONE,
 ) {
 
@@ -33,8 +33,8 @@ data class CodeExecution(
         check(state.isNotFinal() || finishedAt != null) { "finishedAt must be set for final state" }
         check(state.isFinal() || finishedAt == null) { "finishedAt must be empty for not final state" }
 
-        check(state == CREATED || executionLogsPath != null) { "executionLogsPath must be set for $state state" }
-        check(state != CREATED || executionLogsPath == null) { "executionLogsPath must be empty for $state state" }
+        check(state == CREATED || logsPath != null) { "logsPath must be set for $state state" }
+        check(state != CREATED || logsPath == null) { "logsPath must be empty for $state state" }
     }
 
     private constructor(builder: Builder) : this(
@@ -46,7 +46,7 @@ data class CodeExecution(
         builder.compiler,
         builder.finishedAt,
         builder.exitCode,
-        builder.executionLogsPath,
+        builder.logsPath,
         builder.failureReason,
     )
 
@@ -59,7 +59,7 @@ data class CodeExecution(
         compiler = this@CodeExecution.compiler
         finishedAt = this@CodeExecution.finishedAt
         exitCode = this@CodeExecution.exitCode
-        executionLogsPath = this@CodeExecution.executionLogsPath
+        logsPath = this@CodeExecution.logsPath
         failureReason = this@CodeExecution.failureReason
     }
 
@@ -73,7 +73,7 @@ data class CodeExecution(
 
         var finishedAt: Instant? = null
         var exitCode: Int? = null
-        var executionLogsPath: String? = null
+        var logsPath: CodeExecutionLogsPath? = null
         var failureReason: CodeExecutionFailureReason = NONE
 
         fun build() = CodeExecution(this)
@@ -81,5 +81,10 @@ data class CodeExecution(
 
     companion object {
         inline fun builder(block: Builder.() -> Unit) = Builder().apply(block)
+
+        const val SOURCE_FILE_NAME = "source"
+        const val ALL_LOGS_FILE_NAME = "all_logs"
+        const val STDOUT_LOGS_FILE_NAME = "stdout_logs"
+        const val STDERR_LOGS_FILE_NAME = "stderr_logs"
     }
 }

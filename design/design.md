@@ -33,13 +33,12 @@ Returns `id` of code execution that can be used later to check its status and re
 Returns code execution status and some other information.
 - `GET /code-execution/{id}/logs`. 
 Returns code execution logs.
-Current implementation returns all logs.
-It can be improved in several ways.
+Current implementation returns all `stdout` and/or `stderr` logs.
+It can be improved in several ways:
   - Pagination (e.g. by adding `fromPage` request parameter and `nextPage`
-    response field). 
-  - Filter response by `stdout` and `stderr` streams.
+    response field).
   - More intelligent response parsing (e.g. detecting common compilation issues, etc.).
-  - Tailing the results, filter by date.
+  - Tailing the results, filter by time.
 
 ### Technologies
 - **Kotlin** (for writing *Server* and *Worker* component's code)

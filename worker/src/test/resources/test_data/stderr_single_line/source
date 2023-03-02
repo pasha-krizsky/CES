@@ -1,0 +1,9 @@
+namespace TestNamespace
+{
+    class Test {
+        static void Main(string[] args)
+        {
+            System.Console.Error.Write("error line");
+        }
+    }
+}

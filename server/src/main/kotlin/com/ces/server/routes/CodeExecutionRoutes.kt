@@ -33,28 +33,36 @@ fun Route.codeExecutionRouting() {
 
     route("/code-execution") {
         get("{id?}") {
-            val id = call.parameters["id"] ?: return@get call.respondText(MISSING_ID_PARAMETER, status = BadRequest)
+            val id =
+                call.parameters["id"] ?: return@get call.respondText(MISSING_ID_PARAMETER_ERROR, status = BadRequest)
 
             try {
                 val codeExecution = fetchCodeExecution(id, database)
                 call.respond(CodeExecutionView.from(codeExecution))
             } catch (e: IllegalArgumentException) {
-                call.respondText(WRONG_ID_FORMAT, status = BadRequest)
+                call.respondText(WRONG_ID_FORMAT_ERROR, status = BadRequest)
             }
         }
         get("{id?}/logs") {
-            val id = call.parameters["id"] ?: return@get call.respondText(MISSING_ID_PARAMETER, status = BadRequest)
+            val id =
+                call.parameters["id"] ?: return@get call.respondText(MISSING_ID_PARAMETER_ERROR, status = BadRequest)
+            val stdout = call.request.queryParameters["stdout"]?.toBooleanStrict() ?: false
+            val stderr = call.request.queryParameters["stderr"]?.toBooleanStrict() ?: false
+
+            if (!stdout && !stderr) {
+                call.respondText(MISSING_LOGS_STREAM_ERROR, status = BadRequest)
+            }
 
             try {
                 val codeExecution = fetchCodeExecution(id, database)
-                if (codeExecution.executionLogsPath == null)
+                if (codeExecution.logsPath == null)
                     throw NotFoundException("Execution logs not found")
 
-                val logs = downloadLogs(config, codeExecution, storage)
+                val logs = downloadLogs(config, codeExecution, storage, stdout, stderr)
                 call.respondFile(logs)
                 logs.delete()
             } catch (e: IllegalArgumentException) {
-                call.respondText(WRONG_ID_FORMAT, status = BadRequest)
+                call.respondText(WRONG_ID_FORMAT_ERROR, status = BadRequest)
             }
         }
         post {
@@ -70,11 +78,24 @@ private suspend fun fetchCodeExecution(id: String, database: CodeExecutionDao): 
     return database.get(codeExecutionId)
 }
 
-private suspend fun downloadLogs(config: ServerConfig, codeExecution: CodeExecution, storage: ObjectStorage): File {
+private suspend fun downloadLogs(
+    config: ServerConfig,
+    codeExecution: CodeExecution,
+    storage: ObjectStorage,
+    stdout: Boolean,
+    stderr: Boolean,
+): File {
     val tmpLocalDestination = tmpDir + separator + randomUUID()
-    return storage.downloadFile(config.codeExecutionBucketName, codeExecution.executionLogsPath!!, tmpLocalDestination)
+    val logs = codeExecution.logsPath!!
+    val logsPath = if (stdout && stderr) logs.allPath else if (stdout) logs.stdoutPath else logs.stderrPath
+    return storage.downloadFile(
+        config.codeExecutionBucketName,
+        logsPath,
+        tmpLocalDestination
+    )
 }
 
-private const val MISSING_ID_PARAMETER = "Missing id parameter"
-private const val WRONG_ID_FORMAT = "Failed to parse id parameter to UUID format"
+private const val MISSING_ID_PARAMETER_ERROR = "Missing id parameter"
+private const val WRONG_ID_FORMAT_ERROR = "Failed to parse id parameter to UUID format"
+private const val MISSING_LOGS_STREAM_ERROR = "At least one 'stdout' or 'stderr' query parameter must be set to true"
 private val tmpDir: String = System.getProperty("java.io.tmpdir")

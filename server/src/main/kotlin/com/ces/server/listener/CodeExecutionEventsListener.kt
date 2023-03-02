@@ -52,7 +52,7 @@ class CodeExecutionEventsListener(
         val codeExecution = database.get(codeExecutionId)
         val updatedCodeExecution = codeExecution.copy().apply {
             state = STARTED
-            executionLogsPath = event.executionLogsPath
+            logsPath = event.logsPath
         }.build()
 
         upsert(updatedCodeExecution)

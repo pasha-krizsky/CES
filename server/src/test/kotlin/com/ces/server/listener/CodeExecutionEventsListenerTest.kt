@@ -56,7 +56,7 @@ class CodeExecutionEventsListenerTest : StringSpec({
         eventually(5.seconds) {
             val updated = database.get(codeExecution.id)
             updated.state shouldBe STARTED
-            updated.executionLogsPath shouldBe startedEvent.executionLogsPath
+            updated.logsPath shouldBe startedEvent.logsPath
         }
 
         listenerJob.cancelAndJoin()

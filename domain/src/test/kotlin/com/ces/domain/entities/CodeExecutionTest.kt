@@ -1,5 +1,6 @@
 package com.ces.domain.entities
 
+import com.ces.domain.events.DomainTestData.Companion.aCodeExecutionLogsPath
 import com.ces.domain.events.DomainTestData.Companion.aCompiler
 import com.ces.domain.events.DomainTestData.Companion.aCompletedCodeExecution
 import com.ces.domain.events.DomainTestData.Companion.aFailedCodeExecution
@@ -38,7 +39,7 @@ class CodeExecutionTest : StringSpec({
 
         codeExecution.finishedAt shouldBe null
         codeExecution.exitCode shouldBe null
-        codeExecution.executionLogsPath shouldBe null
+        codeExecution.logsPath shouldBe null
         codeExecution.failureReason shouldBe NONE
     }
 
@@ -67,7 +68,7 @@ class CodeExecutionTest : StringSpec({
 
         codeExecution.finishedAt shouldBe null
         codeExecution.exitCode shouldBe null
-        codeExecution.executionLogsPath shouldBe null
+        codeExecution.logsPath shouldBe null
         codeExecution.failureReason shouldBe NONE
     }
 
@@ -79,7 +80,7 @@ class CodeExecutionTest : StringSpec({
         val compiler = aCompiler()
         val finishedAt = createdAt + 5.seconds
         val exitCode = anExitCode()
-        val executionLogsPath = aPath()
+        val executionLogsPath = aCodeExecutionLogsPath()
         val failureReason = aFailureReason()
 
         val codeExecution = CodeExecution(
@@ -95,7 +96,7 @@ class CodeExecutionTest : StringSpec({
         codeExecution.compiler shouldBe compiler
         codeExecution.finishedAt shouldBe finishedAt
         codeExecution.exitCode shouldBe exitCode
-        codeExecution.executionLogsPath shouldBe executionLogsPath
+        codeExecution.logsPath shouldBe executionLogsPath
         codeExecution.failureReason shouldBe failureReason
     }
 
@@ -107,7 +108,7 @@ class CodeExecutionTest : StringSpec({
         val compiler = aCompiler()
         val finishedAt = createdAt + 5.seconds
         val exitCode = anExitCode()
-        val executionLogsPath = aPath()
+        val executionLogsPath = aCodeExecutionLogsPath()
         val failureReason = aFailureReason()
 
         val codeExecution = CodeExecution.builder {
@@ -119,7 +120,7 @@ class CodeExecutionTest : StringSpec({
             this.compiler = compiler
             this.finishedAt = finishedAt
             this.exitCode = exitCode
-            this.executionLogsPath = executionLogsPath
+            this.logsPath = executionLogsPath
             this.failureReason = failureReason
         }.build()
 
@@ -131,7 +132,7 @@ class CodeExecutionTest : StringSpec({
         codeExecution.compiler shouldBe compiler
         codeExecution.finishedAt shouldBe finishedAt
         codeExecution.exitCode shouldBe exitCode
-        codeExecution.executionLogsPath shouldBe executionLogsPath
+        codeExecution.logsPath shouldBe executionLogsPath
         codeExecution.failureReason shouldBe failureReason
     }
 

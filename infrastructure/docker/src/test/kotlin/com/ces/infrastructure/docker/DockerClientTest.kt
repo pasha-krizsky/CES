@@ -86,7 +86,7 @@ class DockerClientTest : StringSpec({
             logs.stderr.shouldBeEmpty()
             logs.stdout.shouldNotBeEmpty()
             logs.stdout[0].content shouldBe "Hello World\n"
-            logs.allAsText() shouldBe "Hello World\n"
+            logs.allContent() shouldBe "Hello World\n"
         }
 
         removeContainer(containerId)

@@ -1,0 +1,9 @@
+namespace TestNamespace
+{
+    class Test {
+        static int Main(string[] args)
+        {
+            return 10;
+        }
+    }
+}

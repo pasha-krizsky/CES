@@ -1,6 +1,7 @@
 package com.ces.server.flow
 
 import com.ces.domain.entities.CodeExecution
+import com.ces.domain.entities.CodeExecution.Companion.SOURCE_FILE_NAME
 import com.ces.domain.events.CodeExecutionRequestedEvent
 import com.ces.domain.json.JsonConfig.Companion.encodeCodeExecutionEvent
 import com.ces.domain.types.CodeExecutionId
@@ -30,7 +31,7 @@ class CodeExecutionSubmitFlow(
         val tmpLocalFile = File(tmpLocalPath)
         tmpLocalFile.appendText(request.sourceCode)
 
-        val storagePath = "${codeExecutionId.value}/$SOURCE_CODE_FILE_NAME"
+        val storagePath = "${codeExecutionId.value}/$SOURCE_FILE_NAME"
         storage.uploadFile(config.codeExecutionBucketName, tmpLocalPath, storagePath)
         tmpLocalFile.delete()
 
@@ -51,7 +52,6 @@ class CodeExecutionSubmitFlow(
     }
 
     companion object {
-        private const val SOURCE_CODE_FILE_NAME = "source"
         private val TMP_DIR: String = System.getProperty("java.io.tmpdir")
     }
 }

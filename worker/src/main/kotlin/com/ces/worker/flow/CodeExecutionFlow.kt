@@ -1,5 +1,8 @@
 package com.ces.worker.flow
 
+import com.ces.domain.entities.CodeExecution.Companion.ALL_LOGS_FILE_NAME
+import com.ces.domain.entities.CodeExecution.Companion.STDERR_LOGS_FILE_NAME
+import com.ces.domain.entities.CodeExecution.Companion.STDOUT_LOGS_FILE_NAME
 import com.ces.domain.events.CodeExecutionFinishedEvent
 import com.ces.domain.events.CodeExecutionRequestedEvent
 import com.ces.domain.events.CodeExecutionStartedEvent
@@ -8,6 +11,7 @@ import com.ces.domain.json.JsonConfig.Companion.encodeCodeExecutionEvent
 import com.ces.domain.types.CodeExecutionFailureReason
 import com.ces.domain.types.CodeExecutionFailureReason.*
 import com.ces.domain.types.CodeExecutionId
+import com.ces.domain.types.CodeExecutionLogsPath
 import com.ces.domain.types.CodeExecutionState
 import com.ces.domain.types.CodeExecutionState.COMPLETED
 import com.ces.domain.types.CodeExecutionState.FAILED
@@ -55,8 +59,8 @@ class CodeExecutionFlow(
 
     private suspend fun processRequest(request: CodeExecutionRequestedEvent) {
         val codeExecutionId = request.id
-        val resultsPath = "${codeExecutionId.value}/$RESULTS_FILE_NAME"
-        sendExecutionStartedEvent(codeExecutionId, resultsPath)
+        val logsPath = codeExecutionLogsPathFor(codeExecutionId)
+        sendExecutionStartedEvent(codeExecutionId, logsPath)
 
         val sourceCodeFile = downloadSourceCode(codeExecutionId, request.sourceCodePath)
         val containerId = createContainer(sourceCodeFile.name)
@@ -66,17 +70,20 @@ class CodeExecutionFlow(
         cleanupLocalFiles(sourceCodeFile, sourceCodeTar)
         startContainer(containerId)
 
-        val results = streamExecutionLogs(resultsPath, containerId)
+        val results = streamExecutionLogs(logsPath, containerId)
         sendExecutionFinishedEvent(codeExecutionId, results)
 
         docker.removeContainer(containerId)
     }
 
-    private suspend fun sendExecutionStartedEvent(codeExecutionId: CodeExecutionId, resultsPath: String) {
+    private suspend fun sendExecutionStartedEvent(
+        codeExecutionId: CodeExecutionId,
+        logsPath: CodeExecutionLogsPath
+    ) {
         val startedEvent: CodeExecutionStartedEvent = CodeExecutionStartedEvent.builder {
             id = codeExecutionId
             createdAt = now()
-            executionLogsPath = resultsPath
+            this.logsPath = logsPath
         }.build()
         responseQueue.sendMessage(Message(encodeCodeExecutionEvent(startedEvent)))
     }
@@ -141,7 +148,7 @@ class CodeExecutionFlow(
     }
 
     private suspend fun streamExecutionLogs(
-        resultsPath: String,
+        logsPath: CodeExecutionLogsPath,
         containerId: ContainerId
     ): CodeExecutionResults = withContext(Dispatchers.IO) {
         val result = withTimeoutOrNull(config.runner.codeExecutionTimeoutMillis) {
@@ -151,7 +158,7 @@ class CodeExecutionFlow(
                 val containerStatus = inspection.containerStatus
                 val newLogs = docker.containerLogs(containerId, after)
 
-                storeLogs(after == EPOCH, resultsPath, newLogs)
+                storeLogs(after == EPOCH, logsPath, newLogs)
 
                 after = newLogs.lastTimestamp
                 delay(config.runner.logsPollIntervalMillis)
@@ -178,18 +185,24 @@ class CodeExecutionFlow(
         else
             NONE
 
-    private suspend fun storeLogs(firstChunk: Boolean, resultsPath: String, logs: ContainerLogsResponse) =
+    private suspend fun storeLogs(isFirstChunk: Boolean, logsPath: CodeExecutionLogsPath, logs: ContainerLogsResponse) {
+        if (logs.stdout.isEmpty() && logs.stderr.isEmpty())
+            return
+
+        storeLogs(isFirstChunk, logs.allContent(), logsPath.allPath)
+        storeLogs(isFirstChunk, logs.stdoutContent(), logsPath.stdoutPath)
+        storeLogs(isFirstChunk, logs.stderrContent(), logsPath.stderrPath)
+    }
+
+    private suspend fun storeLogs(firstChunk: Boolean, logsContent: String, path: String) =
         withContext(Dispatchers.IO) {
-            if (logs.stdout.isEmpty() && logs.stderr.isEmpty())
-                return@withContext
-
-            val tmpLocalDestination = WORKER_TMP_DIR + separator + randomUUID()
+            val tmpLocalPath = WORKER_TMP_DIR + separator + randomUUID()
             val file = if (!firstChunk)
-                storage.downloadFile(config.codeExecutionBucketName, resultsPath, tmpLocalDestination)
-            else File(tmpLocalDestination)
-            file.appendText(logs.allAsText())
+                storage.downloadFile(config.codeExecutionBucketName, path, tmpLocalPath)
+            else File(tmpLocalPath)
+            file.appendText(logsContent)
 
-            storage.uploadFile(config.codeExecutionBucketName, tmpLocalDestination, resultsPath)
+            storage.uploadFile(config.codeExecutionBucketName, tmpLocalPath, path)
             file.delete()
         }
 
@@ -207,9 +220,15 @@ class CodeExecutionFlow(
         files.forEach { it.delete() }
     }
 
+    private fun codeExecutionLogsPathFor(codeExecutionId: CodeExecutionId): CodeExecutionLogsPath {
+        val allPath = "${codeExecutionId.value}/$ALL_LOGS_FILE_NAME"
+        val stdoutPath = "${codeExecutionId.value}/$STDOUT_LOGS_FILE_NAME"
+        val stderrPath = "${codeExecutionId.value}/$STDERR_LOGS_FILE_NAME"
+        return CodeExecutionLogsPath(allPath, stdoutPath, stderrPath)
+    }
+
     companion object {
         const val TAR_SUFFIX: String = "_tar"
-        const val RESULTS_FILE_NAME = "results"
         val WORKER_TMP_DIR: String = System.getProperty("java.io.tmpdir")
     }
 }

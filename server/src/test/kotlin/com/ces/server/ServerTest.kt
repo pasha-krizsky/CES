@@ -1,13 +1,21 @@
 package com.ces.server
 
+import com.ces.domain.entities.CodeExecution.Companion.ALL_LOGS_FILE_NAME
+import com.ces.domain.entities.CodeExecution.Companion.SOURCE_FILE_NAME
+import com.ces.domain.entities.CodeExecution.Companion.STDERR_LOGS_FILE_NAME
+import com.ces.domain.entities.CodeExecution.Companion.STDOUT_LOGS_FILE_NAME
 import com.ces.domain.events.CodeExecutionRequestedEvent
 import com.ces.domain.events.CodeExecutionStartedEvent
 import com.ces.domain.events.DomainTestData.Companion.aCompiler
+import com.ces.domain.events.DomainTestData.Companion.aLogs
 import com.ces.domain.events.DomainTestData.Companion.aProgrammingLanguage
-import com.ces.domain.events.DomainTestData.Companion.aResultLogs
 import com.ces.domain.events.DomainTestData.Companion.aSourceCode
 import com.ces.domain.json.JsonConfig.Companion.decodeCodeExecutionEvent
 import com.ces.domain.json.JsonConfig.Companion.encodeCodeExecutionEvent
+import com.ces.domain.types.CodeCompilerType
+import com.ces.domain.types.CodeExecutionId
+import com.ces.domain.types.CodeExecutionLogsPath
+import com.ces.domain.types.ProgrammingLanguage
 import com.ces.infrastructure.minio.MinioExtension
 import com.ces.infrastructure.minio.MinioStorage
 import com.ces.infrastructure.minio.ObjectStorage
@@ -124,31 +132,72 @@ class ServerTest : StringSpec({
         }
     }
 
-    "GET /code-execution/{id}/logs should return logs" {
+    "GET /code-execution/{id}/logs?stdout=true should return stdout logs" {
         testApplication {
-            val submitRequest = CodeExecutionRequest(aProgrammingLanguage(), aCompiler(), aSourceCode())
-            val httpResponse = client.post("/code-execution") {
-                contentType(ContentType.Application.Json)
-                setBody(Json.encodeToString(submitRequest))
-            }
-            httpResponse.status shouldBe Accepted
+            val codeExecutionId = submitCodeExecution(aProgrammingLanguage(), aCompiler(), aSourceCode())
 
-            val submitResponse = Json.decodeFromString<CodeExecutionCreatedResponse>(httpResponse.bodyAsText())
-            val codeExecutionId = submitResponse.id
+            val logsPath = codeExecutionLogsPathFor(codeExecutionId)
 
-            val expectedLogsTmpFile = tempfile()
-            val resultLogs = aResultLogs()
-            expectedLogsTmpFile.appendText(resultLogs)
-            val resultsPath = "${codeExecutionId.value}/$RESULTS_FILE_NAME"
-            minioStorage.uploadFile(config.codeExecutionBucketName, expectedLogsTmpFile.absolutePath, resultsPath)
-            val startedEvent = CodeExecutionStartedEvent(codeExecutionId, now(), resultsPath)
+            val stdoutLogs = aLogs()
+            val stderrLogs = aLogs()
+            storeLogs(minioStorage, stdoutLogs, logsPath.stdoutPath)
+            storeLogs(minioStorage, stderrLogs, logsPath.stderrPath)
+            storeLogs(minioStorage, stdoutLogs + stderrLogs, logsPath.allPath)
+            val startedEvent = CodeExecutionStartedEvent(codeExecutionId, now(), logsPath)
             responseQueue.sendMessage(Message(encodeCodeExecutionEvent(startedEvent)))
 
             eventually(2.seconds) {
-                val logsHttpResponse = client.get("/code-execution/${codeExecutionId.value}/logs")
+                val logsHttpResponse = client.get("/code-execution/${codeExecutionId.value}/logs?stdout=true")
 
                 logsHttpResponse.status shouldBe OK
-                logsHttpResponse.bodyAsText() shouldBe resultLogs
+                logsHttpResponse.bodyAsText() shouldBe stdoutLogs
+            }
+        }
+    }
+
+    "GET /code-execution/{id}/logs?stderr=true should return stdout logs" {
+        testApplication {
+            val codeExecutionId = submitCodeExecution(aProgrammingLanguage(), aCompiler(), aSourceCode())
+
+            val logsPath = codeExecutionLogsPathFor(codeExecutionId)
+
+            val stdoutLogs = aLogs()
+            val stderrLogs = aLogs()
+            storeLogs(minioStorage, stdoutLogs, logsPath.stdoutPath)
+            storeLogs(minioStorage, stderrLogs, logsPath.stderrPath)
+            storeLogs(minioStorage, stdoutLogs + stderrLogs, logsPath.allPath)
+            val startedEvent = CodeExecutionStartedEvent(codeExecutionId, now(), logsPath)
+            responseQueue.sendMessage(Message(encodeCodeExecutionEvent(startedEvent)))
+
+            eventually(2.seconds) {
+                val logsHttpResponse = client.get("/code-execution/${codeExecutionId.value}/logs?stderr=true")
+
+                logsHttpResponse.status shouldBe OK
+                logsHttpResponse.bodyAsText() shouldBe stderrLogs
+            }
+        }
+    }
+
+    "GET /code-execution/{id}/logs?stdout=true&stderr=true should return all" {
+        testApplication {
+            val codeExecutionId = submitCodeExecution(aProgrammingLanguage(), aCompiler(), aSourceCode())
+
+            val logsPath = codeExecutionLogsPathFor(codeExecutionId)
+
+            val stdoutLogs = aLogs()
+            val stderrLogs = aLogs()
+            storeLogs(minioStorage, stdoutLogs, logsPath.stdoutPath)
+            storeLogs(minioStorage, stderrLogs, logsPath.stderrPath)
+            storeLogs(minioStorage, stdoutLogs + stderrLogs, logsPath.allPath)
+            val startedEvent = CodeExecutionStartedEvent(codeExecutionId, now(), logsPath)
+            responseQueue.sendMessage(Message(encodeCodeExecutionEvent(startedEvent)))
+
+            eventually(2.seconds) {
+                val logsHttpResponse =
+                    client.get("/code-execution/${codeExecutionId.value}/logs?stdout=true&stderr=true")
+
+                logsHttpResponse.status shouldBe OK
+                logsHttpResponse.bodyAsText() shouldBe stdoutLogs + stderrLogs
             }
         }
     }
@@ -167,20 +216,50 @@ class ServerTest : StringSpec({
         }
     }
 
-    "GET /code-execution/{id}/logs should return 400 error when code execution id is not valid UUID" {
+    "GET /code-execution/{id}/logs?stdout=true should return 400 error when code execution id is not valid UUID" {
         testApplication {
-            val response = client.get("/code-execution/wrong-id-format/logs")
+            val response = client.get("/code-execution/wrong-id-format/logs?stdout=true")
             response.status shouldBe BadRequest
         }
     }
 
-    "GET /code-execution/{id}/logs should return 404 error when code execution does not exist" {
+    "GET /code-execution/{id}/logs?stdout=true should return 404 error when code execution does not exist" {
         testApplication {
-            val response = client.get("/code-execution/${randomUUID()}/logs")
+            val response = client.get("/code-execution/${randomUUID()}/logs?stdout=true")
             response.status shouldBe NotFound
         }
     }
+
+    "GET /code-execution/{id}/logs should return 400 error when logs stream not specified" {
+        testApplication {
+            val response = client.get("/code-execution/${randomUUID()}/logs")
+            response.status shouldBe BadRequest
+        }
+    }
 })
+
+private suspend fun ApplicationTestBuilder.submitCodeExecution(
+    language: ProgrammingLanguage,
+    compiler: CodeCompilerType,
+    sourceCode: String,
+): CodeExecutionId {
+    val submitRequest = CodeExecutionRequest(language, compiler, sourceCode)
+    val httpResponse = client.post("/code-execution") {
+        contentType(ContentType.Application.Json)
+        setBody(Json.encodeToString(submitRequest))
+    }
+
+    httpResponse.status shouldBe Accepted
+
+    val submitResponse = Json.decodeFromString<CodeExecutionCreatedResponse>(httpResponse.bodyAsText())
+    return submitResponse.id
+}
+
+private suspend fun StringSpec.storeLogs(storage: ObjectStorage, logs: String, path: String) {
+    val tmpFile = tempfile()
+    tmpFile.appendText(logs)
+    storage.uploadFile(config.codeExecutionBucketName, tmpFile.absolutePath, path)
+}
 
 private fun requestQueue(connector: RabbitmqConnector) = RabbitReceiveQueue(
     config.codeExecutionRequestQueue.name, connector
@@ -197,5 +276,9 @@ private fun minioStorage() = MinioStorage(
         .build()
 )
 
-private const val SOURCE_FILE_NAME = "source"
-private const val RESULTS_FILE_NAME = "results"
+private fun codeExecutionLogsPathFor(codeExecutionId: CodeExecutionId): CodeExecutionLogsPath {
+    val allPath = "${codeExecutionId.value}/$ALL_LOGS_FILE_NAME"
+    val stdoutPath = "${codeExecutionId.value}/$STDOUT_LOGS_FILE_NAME"
+    val stderrPath = "${codeExecutionId.value}/$STDERR_LOGS_FILE_NAME"
+    return CodeExecutionLogsPath(allPath, stdoutPath, stderrPath)
+}

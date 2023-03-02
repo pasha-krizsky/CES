@@ -1,6 +1,7 @@
 package com.ces.domain.events
 
 import com.ces.domain.types.CodeExecutionId
+import com.ces.domain.types.CodeExecutionLogsPath
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -10,25 +11,25 @@ import kotlinx.serialization.Serializable
 data class CodeExecutionStartedEvent(
     override val id: CodeExecutionId,
     override val createdAt: Instant,
-    val executionLogsPath: String,
+    val logsPath: CodeExecutionLogsPath,
 ) : CodeExecutionEvent() {
 
     private constructor(builder: Builder) : this(
         builder.id,
         builder.createdAt,
-        builder.executionLogsPath,
+        builder.logsPath,
     )
 
     fun copy() = Builder().apply {
         id = this@CodeExecutionStartedEvent.id
         createdAt = this@CodeExecutionStartedEvent.createdAt
-        executionLogsPath = this@CodeExecutionStartedEvent.executionLogsPath
+        logsPath = this@CodeExecutionStartedEvent.logsPath
     }
 
     class Builder {
         lateinit var id: CodeExecutionId
         lateinit var createdAt: Instant
-        lateinit var executionLogsPath: String
+        lateinit var logsPath: CodeExecutionLogsPath
 
         fun build() = CodeExecutionStartedEvent(this)
     }

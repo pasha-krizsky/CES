@@ -1,7 +1,7 @@
 package com.ces.domain.events
 
+import com.ces.domain.events.DomainTestData.Companion.aCodeExecutionLogsPath
 import com.ces.domain.events.DomainTestData.Companion.aCodeExecutionStartedEvent
-import com.ces.domain.events.DomainTestData.Companion.aPath
 import com.ces.domain.json.JsonConfig.Companion.decodeCodeExecutionEvent
 import com.ces.domain.json.JsonConfig.Companion.encodeCodeExecutionEvent
 import com.ces.domain.types.CodeExecutionId
@@ -17,29 +17,29 @@ class CodeExecutionStartedEventTest : StringSpec({
     "should create from constructor" {
         val codeExecutionId = CodeExecutionId.random()
         val createdAt = now()
-        val executionLogsPath = aPath()
+        val executionLogsPath = aCodeExecutionLogsPath()
 
         val event = CodeExecutionStartedEvent(codeExecutionId, createdAt, executionLogsPath)
 
         event.id shouldBe codeExecutionId
         event.createdAt shouldBe createdAt
-        event.executionLogsPath shouldBe executionLogsPath
+        event.logsPath shouldBe executionLogsPath
     }
 
     "should create from builder" {
         val codeExecutionId = CodeExecutionId.random()
         val createdAt = now()
-        val executionLogsPath = aPath()
+        val executionLogsPath = aCodeExecutionLogsPath()
 
         val event = CodeExecutionStartedEvent.builder {
             this.id = codeExecutionId
             this.createdAt = createdAt
-            this.executionLogsPath = executionLogsPath
+            this.logsPath = executionLogsPath
         }.build()
 
         event.id shouldBe codeExecutionId
         event.createdAt shouldBe createdAt
-        event.executionLogsPath shouldBe executionLogsPath
+        event.logsPath shouldBe executionLogsPath
     }
 
     "should copy" {
@@ -61,7 +61,11 @@ class CodeExecutionStartedEventTest : StringSpec({
             "type": "CodeExecutionStartedEvent",
             "id": "${event.id.value}",
             "createdAt": "${event.createdAt}",
-            "executionLogsPath": "${event.executionLogsPath}"
+            "logsPath": {
+              "allPath": "${event.logsPath.allPath}",
+              "stdoutPath": "${event.logsPath.stdoutPath}",
+              "stderrPath": "${event.logsPath.stderrPath}"
+            }
         }
         """.trimIndent()
     }

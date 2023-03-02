@@ -58,7 +58,7 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "http://localhost:8080/code-execution/{id}/logs}",
+          "raw": "http://localhost:8080/code-execution/{id}/logs?stdout=true&stderr=true",
           "protocol": "http",
           "host": [
             "localhost"
