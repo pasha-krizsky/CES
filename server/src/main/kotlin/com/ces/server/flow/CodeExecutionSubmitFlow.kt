@@ -11,7 +11,7 @@ import com.ces.infrastructure.rabbitmq.Message
 import com.ces.infrastructure.rabbitmq.SendQueue
 import com.ces.server.config.ServerConfig
 import com.ces.server.models.CodeExecutionRequest
-import com.ces.server.storage.CodeExecutionDao
+import com.ces.server.dao.CodeExecutionDao
 import kotlinx.datetime.Clock.System.now
 import java.io.File
 import java.io.File.separator
@@ -35,9 +35,6 @@ class CodeExecutionSubmitFlow(
         storage.uploadFile(config.codeExecutionBucketName, tmpLocalPath, storagePath)
         tmpLocalFile.delete()
 
-        val event = CodeExecutionRequestedEvent(codeExecutionId, now(), request.language, request.compiler, storagePath)
-        requestQueue.sendMessage(Message(encodeCodeExecutionEvent(event)))
-
         val codeExecution = CodeExecution(
             codeExecutionId,
             now(),
@@ -47,7 +44,11 @@ class CodeExecutionSubmitFlow(
             request.compiler,
         )
 
-        database.upsert(codeExecution)
+        database.insert(codeExecution)
+
+        val event = CodeExecutionRequestedEvent(codeExecutionId, now(), request.language, request.compiler, storagePath)
+        requestQueue.sendMessage(Message(encodeCodeExecutionEvent(event)))
+
         return codeExecution
     }
 }

@@ -16,6 +16,7 @@ import com.ces.domain.types.CodeCompilerType
 import com.ces.domain.types.CodeExecutionId
 import com.ces.domain.types.CodeExecutionLogsPath
 import com.ces.domain.types.ProgrammingLanguage
+import com.ces.infrastructure.database.DatabaseExtension
 import com.ces.infrastructure.minio.MinioExtension
 import com.ces.infrastructure.minio.MinioStorage
 import com.ces.infrastructure.minio.ObjectStorage
@@ -54,6 +55,7 @@ val config = ServerConfig.from(HoconApplicationConfig(ConfigFactory.load()))
 
 class ServerTest : StringSpec({
 
+    extension(DatabaseExtension(config.database))
     extension(MinioExtension(config.minio.accessKey, config.minio.secretKey))
     extension(RabbitmqExtension())
 

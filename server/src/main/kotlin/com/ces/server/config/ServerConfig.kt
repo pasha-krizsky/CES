@@ -1,11 +1,13 @@
 package com.ces.server.config
 
+import com.ces.infrastructure.database.DatabaseConfig
 import com.ces.infrastructure.minio.MinioConfig
 import com.ces.infrastructure.rabbitmq.config.QueueConfig
 import com.ces.infrastructure.rabbitmq.config.RabbitmqConfig
 import io.ktor.server.config.*
 
 class ServerConfig(
+    val database: DatabaseConfig,
     val rabbitmq: RabbitmqConfig,
     val codeExecutionRequestQueue: QueueConfig,
     val codeExecutionResponseQueue: QueueConfig,
@@ -18,6 +20,12 @@ class ServerConfig(
         val tmpDir: String = System.getProperty("java.io.tmpdir")
 
         fun from(config: HoconApplicationConfig): ServerConfig {
+            val database = DatabaseConfig(
+                url = stringProperty(config, DATABASE_URL),
+                driver = stringProperty(config, DATABASE_DRIVER),
+                user = stringProperty(config, DATABASE_USER),
+                password = stringProperty(config, DATABASE_PASSWORD),
+            )
             val rabbitmq = RabbitmqConfig(
                 user = stringProperty(config, RABBITMQ_USER),
                 password = stringProperty(config, RABBITMQ_PASSWORD),
@@ -37,6 +45,7 @@ class ServerConfig(
                 secretKey = stringProperty(config, MINIO_SECRET_KEY),
             )
             return ServerConfig(
+                database = database,
                 rabbitmq = rabbitmq,
                 codeExecutionRequestQueue = codeExecutionRequestQueue,
                 codeExecutionResponseQueue = codeExecutionResponseQueue,
@@ -50,6 +59,11 @@ class ServerConfig(
 
         private fun intProperty(hocon: HoconApplicationConfig, name: String) =
             stringProperty(hocon, name).toInt()
+
+        private const val DATABASE_URL = "database.url"
+        private const val DATABASE_DRIVER = "database.driver"
+        private const val DATABASE_USER = "database.user"
+        private const val DATABASE_PASSWORD = "database.password"
 
         private const val RABBITMQ_USER = "rabbitmq.user"
         private const val RABBITMQ_PASSWORD = "rabbitmq.password"

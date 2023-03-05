@@ -8,7 +8,7 @@ import com.ces.domain.json.JsonConfig.Companion.decodeCodeExecutionEvent
 import com.ces.domain.types.CodeExecutionState.STARTED
 import com.ces.infrastructure.rabbitmq.DeliveryId
 import com.ces.infrastructure.rabbitmq.ReceiveQueue
-import com.ces.server.storage.CodeExecutionDao
+import com.ces.server.dao.CodeExecutionDao
 import mu.KotlinLogging
 
 class CodeExecutionEventsListener(
@@ -55,7 +55,7 @@ class CodeExecutionEventsListener(
             logsPath = event.logsPath
         }.build()
 
-        upsert(updatedCodeExecution)
+        update(updatedCodeExecution)
     }
 
     private suspend fun processFinishedEvent(event: CodeExecutionFinishedEvent) {
@@ -68,11 +68,11 @@ class CodeExecutionEventsListener(
             finishedAt = event.createdAt
         }.build()
 
-        upsert(updatedCodeExecution)
+        update(updatedCodeExecution)
     }
 
-    private suspend fun upsert(codeExecution: CodeExecution) {
-        log.debug { "Upsert code execution: $codeExecution" }
-        database.upsert(codeExecution)
+    private suspend fun update(codeExecution: CodeExecution) {
+        log.debug { "Update code execution: $codeExecution" }
+        database.update(codeExecution)
     }
 }

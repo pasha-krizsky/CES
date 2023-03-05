@@ -6,8 +6,7 @@ import com.ces.infrastructure.rabbitmq.*
 import com.ces.server.config.ServerConfig
 import com.ces.server.flow.CodeExecutionSubmitFlow
 import com.ces.server.listener.CodeExecutionEventsListener
-import com.ces.server.storage.CodeExecutionDao
-import com.ces.server.storage.CodeExecutionInMemoryDao
+import com.ces.server.dao.CodeExecutionDao
 import com.typesafe.config.ConfigFactory
 import io.ktor.server.config.*
 import io.minio.MinioAsyncClient
@@ -53,7 +52,7 @@ val serverModule = module {
         bind<ReceiveQueue>()
     }
 
-    single { CodeExecutionInMemoryDao() } withOptions { bind<CodeExecutionDao>() }
+    single { CodeExecutionDao() }
 
     single {
         CodeExecutionSubmitFlow(

@@ -37,6 +37,7 @@ tasks.getByName<Test>("test") {
 
 dependencies {
     implementation(project(":domain"))
+    implementation(project(":infrastructure:database"))
     implementation(project(":infrastructure:rabbitmq"))
     implementation(project(":infrastructure:minio"))
 
@@ -56,8 +57,9 @@ dependencies {
     implementation("io.minio:minio:$minioVersion")
 
     testImplementation(testFixtures(project(":domain")))
-    testImplementation(testFixtures(project(":infrastructure:minio")))
+    testImplementation(testFixtures(project(":infrastructure:database")))
     testImplementation(testFixtures(project(":infrastructure:rabbitmq")))
+    testImplementation(testFixtures(project(":infrastructure:minio")))
 
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktorVersion")
     testImplementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")

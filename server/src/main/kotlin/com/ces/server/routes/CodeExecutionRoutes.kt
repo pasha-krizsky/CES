@@ -7,7 +7,7 @@ import com.ces.server.config.ServerConfig
 import com.ces.server.flow.CodeExecutionSubmitFlow
 import com.ces.server.models.CodeExecutionRequest
 import com.ces.server.models.CodeExecutionView
-import com.ces.server.storage.CodeExecutionDao
+import com.ces.server.dao.CodeExecutionDao
 import io.ktor.http.HttpStatusCode.Companion.Accepted
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
 import io.ktor.server.application.*
