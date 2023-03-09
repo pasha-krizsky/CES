@@ -96,8 +96,7 @@ class CodeExecutionFlow(
 
     private suspend inline fun downloadSourceCode(id: CodeExecutionId, scriptRemotePath: String): File {
         val localDestination = WorkerConfig.tmpDir + separator + id.value
-        storage.downloadFile(config.codeExecutionBucketName, scriptRemotePath, localDestination)
-        return File(localDestination)
+        return storage.get(config.codeExecutionBucketName, scriptRemotePath, localDestination)
     }
 
     private suspend fun createContainer(scriptName: String): ContainerId {
@@ -158,7 +157,7 @@ class CodeExecutionFlow(
                 val containerStatus = inspection.containerStatus
                 val newLogs = docker.containerLogs(containerId, after)
 
-                storeLogs(after == EPOCH, logsPath, newLogs)
+                storeLogs(logsPath, newLogs)
 
                 after = newLogs.lastTimestamp
                 delay(config.runner.logsPollIntervalMillis)
@@ -185,24 +184,22 @@ class CodeExecutionFlow(
         else
             NONE
 
-    private suspend fun storeLogs(isFirstChunk: Boolean, logsPath: CodeExecutionLogsPath, logs: ContainerLogsResponse) {
+    private suspend fun storeLogs(logsPath: CodeExecutionLogsPath, logs: ContainerLogsResponse) {
         if (logs.stdout.isEmpty() && logs.stderr.isEmpty())
             return
 
-        storeLogs(isFirstChunk, logs.allContent(), logsPath.allPath)
-        storeLogs(isFirstChunk, logs.stdoutContent(), logsPath.stdoutPath)
-        storeLogs(isFirstChunk, logs.stderrContent(), logsPath.stderrPath)
+        storeLogs(logs.allContent(), logsPath.allPath)
+        storeLogs(logs.stdoutContent(), logsPath.stdoutPath)
+        storeLogs(logs.stderrContent(), logsPath.stderrPath)
     }
 
-    private suspend fun storeLogs(firstChunk: Boolean, logsContent: String, path: String) =
+    private suspend fun storeLogs(logsContent: String, path: String) =
         withContext(Dispatchers.IO) {
             val tmpLocalPath = WorkerConfig.tmpDir + separator + randomUUID()
-            val file = if (!firstChunk)
-                storage.downloadFile(config.codeExecutionBucketName, path, tmpLocalPath)
-            else File(tmpLocalPath)
+            val file = storage.get(config.codeExecutionBucketName, path, tmpLocalPath)
             file.appendText(logsContent)
 
-            storage.uploadFile(config.codeExecutionBucketName, tmpLocalPath, path)
+            storage.upload(config.codeExecutionBucketName, tmpLocalPath, path)
             file.delete()
         }
 
@@ -220,11 +217,24 @@ class CodeExecutionFlow(
         files.forEach { it.delete() }
     }
 
-    private fun codeExecutionLogsPathFor(codeExecutionId: CodeExecutionId): CodeExecutionLogsPath {
+    private suspend fun codeExecutionLogsPathFor(codeExecutionId: CodeExecutionId): CodeExecutionLogsPath {
         val allPath = "${codeExecutionId.value}/$ALL_LOGS_FILE_NAME"
         val stdoutPath = "${codeExecutionId.value}/$STDOUT_LOGS_FILE_NAME"
         val stderrPath = "${codeExecutionId.value}/$STDERR_LOGS_FILE_NAME"
+
+        createEmptyObjects(allPath, stdoutPath, stderrPath)
+
         return CodeExecutionLogsPath(allPath, stdoutPath, stderrPath)
+    }
+
+    private suspend fun createEmptyObjects(vararg paths: String) {
+        paths.forEach { path ->
+            val tmpLocalPath = WorkerConfig.tmpDir + separator + randomUUID()
+            val tmpFile = File(tmpLocalPath)
+            tmpFile.appendText("")
+            storage.upload(config.codeExecutionBucketName, tmpLocalPath, path)
+            tmpFile.delete()
+        }
     }
 
     companion object {

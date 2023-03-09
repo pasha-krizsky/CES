@@ -171,7 +171,7 @@ private suspend fun StringSpec.uploadSourceCode(
 ) {
     val tmpFile = tempfile()
     tmpFile.appendText(sourceCode)
-    storage.uploadFile(config.codeExecutionBucketName, tmpFile.absolutePath, storagePath)
+    storage.upload(config.codeExecutionBucketName, tmpFile.absolutePath, storagePath)
 }
 
 private fun shouldHaveCorrectLogsPath(startedEvent: CodeExecutionStartedEvent) {
@@ -198,7 +198,7 @@ private suspend fun StringSpec.shouldGenerateExpectedLogs(
 ) {
     val logsLocalPath = tempdir().absolutePath + separator + randomUUID()
     val bucket = config.codeExecutionBucketName
-    val logs = minioStorage.downloadFile(bucket, logsPath, logsLocalPath)
+    val logs = minioStorage.get(bucket, logsPath, logsLocalPath)
 
     unifyLineBreaks(logs.readText()) shouldBe unifyLineBreaks(expectedContent)
 

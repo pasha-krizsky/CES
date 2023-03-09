@@ -32,7 +32,7 @@ class CodeExecutionSubmitFlow(
         tmpLocalFile.appendText(request.sourceCode)
 
         val storagePath = "${codeExecutionId.value}/$SOURCE_FILE_NAME"
-        storage.uploadFile(config.codeExecutionBucketName, tmpLocalPath, storagePath)
+        storage.upload(config.codeExecutionBucketName, tmpLocalPath, storagePath)
         tmpLocalFile.delete()
 
         val codeExecution = CodeExecution(

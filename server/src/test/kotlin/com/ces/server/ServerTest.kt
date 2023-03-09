@@ -6,6 +6,7 @@ import com.ces.domain.entities.CodeExecution.Companion.STDERR_LOGS_FILE_NAME
 import com.ces.domain.entities.CodeExecution.Companion.STDOUT_LOGS_FILE_NAME
 import com.ces.domain.events.CodeExecutionRequestedEvent
 import com.ces.domain.events.CodeExecutionStartedEvent
+import com.ces.domain.events.DomainTestData.Companion.aCodeExecutionLogsPath
 import com.ces.domain.events.DomainTestData.Companion.aCompiler
 import com.ces.domain.events.DomainTestData.Companion.aLogs
 import com.ces.domain.events.DomainTestData.Companion.aProgrammingLanguage
@@ -37,6 +38,7 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.http.HttpStatusCode.Companion.Accepted
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
+import io.ktor.http.HttpStatusCode.Companion.InternalServerError
 import io.ktor.http.HttpStatusCode.Companion.NotFound
 import io.ktor.http.HttpStatusCode.Companion.OK
 import io.ktor.server.config.*
@@ -95,7 +97,7 @@ class ServerTest : StringSpec({
 
             val fromPath = "${codeExecutionId.value}/$SOURCE_FILE_NAME"
             val resultPath = tempdir().absolutePath + separator + codeExecutionId.value
-            val savedSourceCode = minioStorage.downloadFile(config.codeExecutionBucketName, fromPath, resultPath)
+            val savedSourceCode = minioStorage.get(config.codeExecutionBucketName, fromPath, resultPath)
 
             savedSourceCode.readText() shouldBe sourceCode
 
@@ -157,7 +159,7 @@ class ServerTest : StringSpec({
         }
     }
 
-    "GET /code-execution/{id}/logs?stderr=true should return stdout logs" {
+    "GET /code-execution/{id}/logs?stderr=true should return stderr logs" {
         testApplication {
             val codeExecutionId = submitCodeExecution(aProgrammingLanguage(), aCompiler(), aSourceCode())
 
@@ -222,6 +224,7 @@ class ServerTest : StringSpec({
         testApplication {
             val response = client.get("/code-execution/wrong-id-format/logs?stdout=true")
             response.status shouldBe BadRequest
+            response.bodyAsText() shouldBe "Failed to parse id parameter to UUID format"
         }
     }
 
@@ -236,6 +239,32 @@ class ServerTest : StringSpec({
         testApplication {
             val response = client.get("/code-execution/${randomUUID()}/logs")
             response.status shouldBe BadRequest
+            response.bodyAsText() shouldBe "At least one 'stdout' or 'stderr' query parameter must be set to true"
+        }
+    }
+
+    "GET /code-execution/{id}/logs?stdout=true should return 404 error when code execution is in CREATED state" {
+        testApplication {
+            val codeExecutionId = submitCodeExecution(aProgrammingLanguage(), aCompiler(), aSourceCode())
+
+            val response = client.get("/code-execution/${codeExecutionId.value}/logs?stdout=true")
+            response.status shouldBe NotFound
+            response.bodyAsText() shouldBe "Logs are not available for code execution in CREATED state"
+        }
+    }
+
+    "GET /code-execution/{id}/logs?stdout=true should return 500 error when logs not found" {
+        testApplication {
+            val codeExecutionId = submitCodeExecution(aProgrammingLanguage(), aCompiler(), aSourceCode())
+
+            val startedEvent = CodeExecutionStartedEvent(codeExecutionId, now(), aCodeExecutionLogsPath())
+            responseQueue.sendMessage(Message(encodeCodeExecutionEvent(startedEvent)))
+
+            eventually(2.seconds) {
+                val response = client.get("/code-execution/${codeExecutionId.value}/logs?stdout=true")
+                response.status shouldBe InternalServerError
+                response.bodyAsText() shouldBe "Logs should exist for code execution in not CREATED state"
+            }
         }
     }
 })
@@ -260,7 +289,7 @@ private suspend fun ApplicationTestBuilder.submitCodeExecution(
 private suspend fun StringSpec.storeLogs(storage: ObjectStorage, logs: String, path: String) {
     val tmpFile = tempfile()
     tmpFile.appendText(logs)
-    storage.uploadFile(config.codeExecutionBucketName, tmpFile.absolutePath, path)
+    storage.upload(config.codeExecutionBucketName, tmpFile.absolutePath, path)
 }
 
 private fun requestQueue(connector: RabbitmqConnector) = RabbitReceiveQueue(
